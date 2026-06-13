@@ -25,3 +25,100 @@ body {
 ::-webkit-scrollbar-track {
   background: #ede3cf;
 }
+
+/* ───────────────────────── 8-bit FX ───────────────────────── */
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(540deg); opacity: 0.15; }
+}
+@keyframes boot-bar {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* subtle CRT scanlines over everything */
+.crt::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  background: repeating-linear-gradient(
+    rgba(36, 26, 15, 0.035) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* blinking terminal cursor */
+.cursor {
+  animation: blink 1s steps(1) infinite;
+}
+
+/* panel hover lift + copper glow */
+.pbox {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.pbox:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(92, 61, 32, 0.22);
+  border-color: rgba(184, 120, 64, 0.55) !important;
+}
+
+/* stack collage tile: straighten + pop on hover */
+.tile {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
+}
+.tile:hover {
+  transform: rotate(0deg) scale(1.07) !important;
+  box-shadow: 0 16px 32px rgba(92, 61, 32, 0.32) !important;
+  z-index: 30 !important;
+}
+
+/* scroll-reveal wrapper */
+.reveal {
+  opacity: 0;
+}
+.reveal.in {
+  animation: reveal-up 0.6s ease forwards;
+}
+
+/* nav link underline-on-hover */
+.navlink {
+  position: relative;
+  transition: color 0.15s ease;
+}
+.navlink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 0;
+  background: #b87840;
+  transition: width 0.2s ease;
+}
+.navlink:hover::after {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; animation: none; }
+  .cursor { animation: none; }
+}

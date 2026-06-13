@@ -1,4 +1,5 @@
 import { Linkedin, Github, FileText, ArrowUpRight } from "lucide-react";
+import { Typewriter, Clock, Reveal } from "./fx";
 
 // ── palette (8-bit theme — kept strictly) ───────────────
 const C = {
@@ -38,16 +39,19 @@ function Box({
   style,
   onClick,
   arrow,
+  flat,
 }: {
   dark?: boolean;
   children: React.ReactNode;
   style?: React.CSSProperties;
   onClick?: () => void;
   arrow?: boolean;
+  flat?: boolean;
 }) {
   return (
     <div
       onClick={onClick}
+      className={flat ? undefined : "pbox"}
       style={{
         position: "relative",
         background: dark ? C.dark : C.cream,
@@ -108,9 +112,12 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           padding: "0 24px", height: "48px",
         }}
       >
-        <button style={{ justifySelf: "start", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.copper, letterSpacing: "0.16em" }}>ABOUT</button>
-        <div style={{ justifySelf: "center" }}><Logo /></div>
-        <button onClick={() => onNav("work")} style={{ justifySelf: "end", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.muted, letterSpacing: "0.16em" }}>WORK</button>
+        <button className="navlink" style={{ justifySelf: "start", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.copper, letterSpacing: "0.16em" }}>ABOUT</button>
+        <div style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: "12px" }}>
+          <Logo />
+          <Clock />
+        </div>
+        <button className="navlink" onClick={() => onNav("work")} style={{ justifySelf: "end", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.muted, letterSpacing: "0.16em" }}>WORK</button>
       </nav>
 
       {/* ── DENSE PACKED GRID ── */}
@@ -125,8 +132,8 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
               ))}
             </div>
             <div>
-              <div style={{ fontSize: "clamp(20px, 3.6vw, 34px)", color: C.cream, lineHeight: 1.4, letterSpacing: "0.02em" }}>
-                BUILDING<br />THINGS WORTH<br />SHIPPING
+              <div style={{ fontSize: "clamp(20px, 3.6vw, 34px)", color: C.cream, lineHeight: 1.4, letterSpacing: "0.02em", minHeight: "144px" }}>
+                <Typewriter text={"BUILDING\nTHINGS WORTH\nSHIPPING"} style={{ color: C.cream }} />
               </div>
               <div style={{ marginTop: "16px", fontSize: "7px", color: C.copper, letterSpacing: "0.08em" }}>one project at a time</div>
               <button onClick={() => onNav("work")} style={{ marginTop: "16px", display: "inline-flex", alignItems: "center", gap: "7px", background: C.copper, border: "none", borderRadius: "4px", padding: "7px 11px", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.dark, letterSpacing: "0.08em" }}>
@@ -184,14 +191,37 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           </Box>
         </div>
 
+        {/* ACHIEVEMENTS — gamified résumé metrics */}
+        <Reveal style={{ marginBottom: GAP }}>
+          <Box style={{ padding: "14px 16px" }}>
+            <Label>ACHIEVEMENTS · UNLOCKED</Label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+              {[
+                "1K+ CALLS / WEEK",
+                "+25% ENGAGEMENT",
+                "200+ MENTORED",
+                "−15% FAILURE RATE",
+                "40% FASTER LOGGING",
+              ].map((b) => (
+                <span key={b} style={{ display: "inline-flex", alignItems: "center", gap: "6px", border: `1px solid ${C.border}`, borderRadius: "999px", padding: "6px 10px", fontSize: "6px", color: C.mid, letterSpacing: "0.05em" }}>
+                  <span style={{ color: C.copper }}>✦</span>{b}
+                </span>
+              ))}
+            </div>
+          </Box>
+        </Reveal>
+
         {/* ROW 3 — packed collage (left) + beliefs/contact (right) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP, marginBottom: GAP }}>
+        <Reveal style={{ marginBottom: GAP }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
           <Box style={{ padding: "14px 16px 16px" }}>
             <Label>IN THE STACK</Label>
             <div style={{ position: "relative", height: "360px", marginTop: "8px" }}>
               {tiles.map((t) => (
                 <div
                   key={t.label}
+                  className="tile"
+                  title={t.label}
                   style={{
                     position: "absolute", top: `${t.top}px`, left: t.left,
                     width: `${t.w}px`, height: `${t.h}px`, zIndex: t.z,
@@ -218,9 +248,11 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             </Box>
           </div>
         </div>
+        </Reveal>
 
         {/* ROW 4 — profile (wide) + quote */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: GAP, marginBottom: GAP }}>
+        <Reveal style={{ marginBottom: GAP }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: GAP }}>
           <Box style={{ padding: 0, minHeight: "150px", display: "flex" }}>
             <div style={{ flex: 1, background: "linear-gradient(160deg,#D4C4A8,#B8A080)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: "6px", color: "rgba(92,61,32,0.4)", letterSpacing: "0.16em" }}>SUMMER PANDEY</span>
@@ -235,9 +267,11 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             </div>
           </Box>
         </div>
+        </Reveal>
 
         {/* FOOTER — packed dark bar */}
-        <Box dark style={{ padding: "18px 22px" }}>
+        <Reveal>
+        <Box dark flat style={{ padding: "18px 22px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
             <div style={{ fontSize: "clamp(9px,1.6vw,13px)", color: C.cream, lineHeight: 1.8, letterSpacing: "0.03em" }}>
               LET&apos;S BUILD COOL<br /><span style={{ color: C.copper }}>PROUD</span>-UCTS TOGETHER
@@ -256,6 +290,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             </div>
           </div>
         </Box>
+        </Reveal>
 
       </div>
     </div>

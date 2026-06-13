@@ -1,3 +1,5 @@
+import { Clock } from "./fx";
+
 const C = { bg: "#EDE3CF", dark: "#241A0F", mid: "#5C3D20", copper: "#B87840", cream: "#FBF6EC", border: "rgba(92,61,32,0.18)", muted: "rgba(92,61,32,0.45)" };
 
 // ── small text helpers (Press Start 2P is tiny — keep sizes small) ──
@@ -47,6 +49,7 @@ interface BoxProps {
 function CategoryBox({ id, title, dark, gridStyle, children }: BoxProps) {
   return (
     <div
+      className="pbox"
       style={{
         position: "relative",
         background: dark ? C.dark : C.cream,
@@ -123,9 +126,10 @@ export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           </div>
           <span style={{ fontSize: "7px", color: C.dark, letterSpacing: "0.1em" }}>SUMMER PANDEY</span>
         </div>
-        <div style={{ display: "flex", gap: "24px" }}>
-          <button onClick={() => onNav("about")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.muted, letterSpacing: "0.1em" }}>ABOUT</button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.copper, letterSpacing: "0.1em" }}>WORK</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <Clock />
+          <button className="navlink" onClick={() => onNav("about")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.muted, letterSpacing: "0.1em" }}>ABOUT</button>
+          <button className="navlink" style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.copper, letterSpacing: "0.1em" }}>WORK</button>
         </div>
       </nav>
 
