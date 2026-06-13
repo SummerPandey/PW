@@ -169,7 +169,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
               <div>
                 <div style={{ fontSize: "7px", color: C.cream, lineHeight: 2.2, letterSpacing: "0.05em", opacity: 0.9 }}>
-                  "BUILD THINGS,<br />SHIP THINGS,<br />LEARN FAST."
+                  &quot;BUILD THINGS,<br />SHIP THINGS,<br />LEARN FAST.&quot;
                 </div>
                 <div style={{ marginTop: "12px", display: "flex", justifyContent: "center", gap: "8px" }}>
                   {[6, 9, 6].map((sz, i) => (
@@ -246,7 +246,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           <Panel dark style={{ minHeight: "190px", padding: "20px 18px" }} arrow>
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: "10px" }}>
               <div style={{ fontSize: "7px", color: C.cream, lineHeight: 2, letterSpacing: "0.04em" }}>
-                DON'T<br />BE SHY,<br />HIT ME UP
+                DON&apos;T<br />BE SHY,<br />HIT ME UP
               </div>
               <a href="mailto:summerpandey23@augustana.edu" style={{ fontSize: "4.5px", color: C.copper, opacity: 0.85, textDecoration: "none" }}>
                 summerpandey23@augustana.edu
@@ -259,7 +259,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
         <Panel dark style={{ padding: "20px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
             <div style={{ fontSize: "clamp(7px, 1.4vw, 11px)", color: C.cream, lineHeight: 1.9, letterSpacing: "0.04em" }}>
-              LET'S BUILD COOL<br />
+              LET&apos;S BUILD COOL<br />
               <span style={{ color: C.copper }}>PROUD</span>-UCTS TOGETHER
             </div>
             <div style={{ fontSize: "5px", color: C.muted, letterSpacing: "0.06em" }}>summerpandey23@augustana.edu</div>
