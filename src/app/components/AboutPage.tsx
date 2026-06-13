@@ -279,7 +279,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             <div style={{ display: "flex", gap: "10px" }}>
               {[
                 { Icon: Linkedin, href: "https://www.linkedin.com/", label: "LinkedIn" },
-                { Icon: Github, href: "https://github.com/", label: "GitHub" },
+                { Icon: Github, href: "https://github.com/SummerPandey", label: "GitHub" },
                 { Icon: FileText, href: "/Summer_Pandey_Resume.pdf", label: "Resume" },
               ].map(({ Icon, href, label }) => (
                 <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
