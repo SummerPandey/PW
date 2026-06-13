@@ -58,7 +58,7 @@ function CategoryBox({ id, title, dark, gridStyle, children }: BoxProps) {
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        minHeight: "130px",
+        minHeight: "200px",
         ...gridStyle,
       }}
     >
@@ -134,17 +134,17 @@ export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
       </nav>
 
       {/* ── CONTENT ── */}
-      <div style={{ padding: "60px 20px 40px", maxWidth: "960px", margin: "0 auto" }}>
+      <div style={{ padding: "70px clamp(16px, 3vw, 36px) 40px", maxWidth: "1400px", margin: "0 auto" }}>
 
         {/* Header row */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "14px" }}>
-          <div style={{ fontSize: "clamp(10px, 2vw, 16px)", color: C.dark, letterSpacing: "0.08em" }}>MY WORK</div>
-          <a href="/Summer_Pandey_Resume.pdf" target="_blank" rel="noopener noreferrer" style={{ fontSize: "5px", color: C.copper, letterSpacing: "0.1em", textDecoration: "none" }}>↓ RESUME.PDF</a>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "16px" }}>
+          <div style={{ fontSize: "clamp(12px, 2.2vw, 20px)", color: C.dark, letterSpacing: "0.08em" }}>MY WORK</div>
+          <a href="/Summer_Pandey_Resume.pdf" target="_blank" rel="noopener noreferrer" style={{ fontSize: "6px", color: C.copper, letterSpacing: "0.1em", textDecoration: "none" }}>↓ RESUME.PDF</a>
         </div>
-        <div style={{ height: "1px", background: C.border, marginBottom: "12px" }} />
+        <div style={{ height: "1px", background: C.border, marginBottom: "14px" }} />
 
         {/* Category grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
 
           {/* 01 — EXPERIENCE (wide, dark) */}
           <CategoryBox id="01" title="EXPERIENCE" dark gridStyle={{ gridColumn: "1 / 3", gridRow: "1" }}>
