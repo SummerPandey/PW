@@ -17,7 +17,7 @@ const GAP = "10px";
 
 function Logo() {
   return (
-    <div style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
+    <div className="bob" style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
       <div style={{ width: "6px", height: "16px", background: C.dark, borderRadius: "2px" }} />
       <div style={{ width: "6px", height: "11px", background: C.copper, borderRadius: "2px" }} />
       <div style={{ width: "6px", height: "7px", background: C.mid, borderRadius: "2px" }} />
@@ -112,12 +112,12 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           padding: "0 24px", height: "48px",
         }}
       >
-        <button className="navlink" style={{ justifySelf: "start", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.copper, letterSpacing: "0.16em" }}>ABOUT</button>
+        <button className="navlink btn-bounce" style={{ justifySelf: "start", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.copper, letterSpacing: "0.16em" }}>ABOUT</button>
         <div style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: "12px" }}>
           <Logo />
           <Clock />
         </div>
-        <button className="navlink" onClick={() => onNav("work")} style={{ justifySelf: "end", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.muted, letterSpacing: "0.16em" }}>WORK</button>
+        <button className="navlink btn-bounce" onClick={() => onNav("work")} style={{ justifySelf: "end", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.muted, letterSpacing: "0.16em" }}>WORK</button>
       </nav>
 
       {/* ── DENSE PACKED GRID ── */}
@@ -136,7 +136,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
                 <Typewriter text={"BUILDING\nTHINGS WORTH\nSHIPPING"} style={{ color: C.cream }} />
               </div>
               <div style={{ marginTop: "16px", fontSize: "7px", color: C.copper, letterSpacing: "0.08em" }}>one project at a time</div>
-              <button onClick={() => onNav("work")} style={{ marginTop: "16px", display: "inline-flex", alignItems: "center", gap: "7px", background: C.copper, border: "none", borderRadius: "4px", padding: "7px 11px", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.dark, letterSpacing: "0.08em" }}>
+              <button className="btn-bounce" onClick={() => onNav("work")} style={{ marginTop: "16px", display: "inline-flex", alignItems: "center", gap: "7px", background: C.copper, border: "none", borderRadius: "4px", padding: "7px 11px", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.dark, letterSpacing: "0.08em" }}>
                 SEE MY WORK <ArrowUpRight size={12} color={C.dark} strokeWidth={2.5} />
               </button>
             </div>
@@ -200,6 +200,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
                 href="https://devpost.com/software/preventia-sblncy"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="badge"
                 style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: C.copper, borderRadius: "999px", padding: "6px 11px", fontSize: "6px", color: C.dark, letterSpacing: "0.05em", textDecoration: "none" }}
               >
                 🏆 BEST USE OF GEMINI AI · HACKAUGIE
@@ -211,7 +212,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
                 "−15% FAILURE RATE",
                 "40% FASTER LOGGING",
               ].map((b) => (
-                <span key={b} style={{ display: "inline-flex", alignItems: "center", gap: "6px", border: `1px solid ${C.border}`, borderRadius: "999px", padding: "6px 10px", fontSize: "6px", color: C.mid, letterSpacing: "0.05em" }}>
+                <span key={b} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", border: `1px solid ${C.border}`, borderRadius: "999px", padding: "6px 10px", fontSize: "6px", color: C.mid, letterSpacing: "0.05em" }}>
                   <span style={{ color: C.copper }}>✦</span>{b}
                 </span>
               ))}

@@ -128,8 +128,8 @@ export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <Clock />
-          <button className="navlink" onClick={() => onNav("about")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.muted, letterSpacing: "0.1em" }}>ABOUT</button>
-          <button className="navlink" style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.copper, letterSpacing: "0.1em" }}>WORK</button>
+          <button className="navlink btn-bounce" onClick={() => onNav("about")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.muted, letterSpacing: "0.1em" }}>ABOUT</button>
+          <button className="navlink btn-bounce" style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.copper, letterSpacing: "0.1em" }}>WORK</button>
         </div>
       </nav>
 
@@ -228,7 +228,7 @@ export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
 
           {/* 07 — FEATURED · award-winning project */}
           <CategoryBox id="★" title="WINNER · PREVENTIA" dark gridStyle={{ gridColumn: "3", gridRow: "3" }}>
-            <div style={{ display: "inline-block", background: C.copper, borderRadius: "4px", padding: "5px 8px", marginBottom: "12px" }}>
+            <div className="badge" style={{ display: "inline-block", background: C.copper, borderRadius: "4px", padding: "5px 8px", marginBottom: "12px" }}>
               <span style={{ fontSize: "5.5px", color: C.dark, letterSpacing: "0.06em" }}>🏆 BEST USE OF GEMINI AI</span>
             </div>
             <Line dark dim>HACKAUGIE · FLUTTER · FIREBASE · GEMINI AI</Line>
