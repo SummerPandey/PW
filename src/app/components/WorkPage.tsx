@@ -226,6 +226,22 @@ export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             </Entry>
           </CategoryBox>
 
+          {/* 07 — FEATURED · award-winning project */}
+          <CategoryBox id="★" title="WINNER · PREVENTIA" dark gridStyle={{ gridColumn: "3", gridRow: "3" }}>
+            <div style={{ display: "inline-block", background: C.copper, borderRadius: "4px", padding: "5px 8px", marginBottom: "12px" }}>
+              <span style={{ fontSize: "5.5px", color: C.dark, letterSpacing: "0.06em" }}>🏆 BEST USE OF GEMINI AI</span>
+            </div>
+            <Line dark dim>HACKAUGIE · FLUTTER · FIREBASE · GEMINI AI</Line>
+            <Bullet dark>Gamified preventive-health app: personalized checklists by age, gender & local disease data</Bullet>
+            <Bullet dark>Built credible, medically-sourced content + a live leaderboard to keep users engaged</Bullet>
+            <div style={{ height: "8px" }} />
+            <Line dark dim>TEAM · OSHAN HAMAL · BINAYAK GURUBACHARYA</Line>
+            <div style={{ height: "8px" }} />
+            <a href="https://devpost.com/software/preventia-sblncy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <Line dark>↗ view on devpost</Line>
+            </a>
+          </CategoryBox>
+
         </div>
       </div>
     </div>

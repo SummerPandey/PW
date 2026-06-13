@@ -170,7 +170,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
             <Label dark>TECH WORKS</Label>
             <div>
               <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-                {["MMM", "PI CAR"].map((n) => (
+                {["PREVENTIA", "MMM"].map((n) => (
                   <div key={n} style={{ flex: 1, height: "54px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <span style={{ fontSize: "5px", color: C.copper, opacity: 0.7 }}>{n}</span>
                   </div>
@@ -196,6 +196,14 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           <Box style={{ padding: "14px 16px" }}>
             <Label>ACHIEVEMENTS · UNLOCKED</Label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+              <a
+                href="https://devpost.com/software/preventia-sblncy"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: C.copper, borderRadius: "999px", padding: "6px 11px", fontSize: "6px", color: C.dark, letterSpacing: "0.05em", textDecoration: "none" }}
+              >
+                🏆 BEST USE OF GEMINI AI · HACKAUGIE
+              </a>
               {[
                 "1K+ CALLS / WEEK",
                 "+25% ENGAGEMENT",
