@@ -13,7 +13,7 @@ const C = {
 };
 
 const FONT = "'Press Start 2P', monospace";
-const GAP = "10px";
+const GAP = "12px";
 
 function Logo() {
   return (
@@ -76,16 +76,16 @@ function Box({
 export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
   // packed overlapping collage tiles
   const tiles: { label: string; top: number; left: string; w: number; h: number; rot: number; grad: string; z: number }[] = [
-    { label: "PYTHON", top: 0, left: "0%", w: 165, h: 120, rot: -3, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 2 },
-    { label: "SQL", top: 70, left: "20%", w: 130, h: 150, rot: 4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 4 },
-    { label: "ML", top: 8, left: "40%", w: 150, h: 115, rot: -5, grad: "linear-gradient(160deg,#D4C4A8,#C0AA88)", z: 3 },
-    { label: "REACT", top: 95, left: "62%", w: 140, h: 130, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 5 },
-    { label: "NODE.JS", top: 0, left: "80%", w: 120, h: 105, rot: 6, grad: "linear-gradient(135deg,#D4C4A8,#B8A080)", z: 2 },
-    { label: "OPENCV", top: 185, left: "6%", w: 145, h: 120, rot: 4, grad: "linear-gradient(135deg,#D4C4A8,#B89870)", z: 3 },
-    { label: "FLUTTER", top: 210, left: "34%", w: 150, h: 125, rot: -4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 6 },
-    { label: "TWILIO", top: 230, left: "60%", w: 135, h: 110, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 4 },
-    { label: "FIREBASE", top: 195, left: "82%", w: 115, h: 130, rot: -6, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 3 },
-    { label: "PYTORCH", top: 130, left: "47%", w: 110, h: 95, rot: 8, grad: "linear-gradient(135deg,#D4C4A8,#C0AA88)", z: 7 },
+    { label: "PYTHON", top: 0, left: "1%", w: 180, h: 140, rot: -3, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 2 },
+    { label: "SQL", top: 95, left: "19%", w: 150, h: 175, rot: 4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 4 },
+    { label: "ML", top: 10, left: "39%", w: 168, h: 135, rot: -5, grad: "linear-gradient(160deg,#D4C4A8,#C0AA88)", z: 3 },
+    { label: "REACT", top: 120, left: "60%", w: 158, h: 150, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 5 },
+    { label: "NODE.JS", top: 0, left: "80%", w: 140, h: 125, rot: 6, grad: "linear-gradient(135deg,#D4C4A8,#B8A080)", z: 2 },
+    { label: "OPENCV", top: 250, left: "5%", w: 165, h: 145, rot: 4, grad: "linear-gradient(135deg,#D4C4A8,#B89870)", z: 3 },
+    { label: "FLUTTER", top: 285, left: "33%", w: 170, h: 150, rot: -4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 6 },
+    { label: "TWILIO", top: 305, left: "59%", w: 152, h: 130, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 4 },
+    { label: "FIREBASE", top: 250, left: "81%", w: 135, h: 155, rot: -6, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 3 },
+    { label: "PYTORCH", top: 175, left: "45%", w: 128, h: 110, rot: 8, grad: "linear-gradient(135deg,#D4C4A8,#C0AA88)", z: 7 },
   ];
 
   return (
@@ -121,18 +121,18 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
       </nav>
 
       {/* ── DENSE PACKED GRID ── */}
-      <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "62px 16px 16px" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "70px clamp(16px, 3vw, 36px) 28px" }}>
 
         {/* ROW 1 — hero (left) + roles & motto (right) */}
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
-          <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "300px", padding: "22px 24px" }}>
+          <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "400px", padding: "30px 32px" }}>
             <div style={{ display: "flex", gap: "4px", alignItems: "flex-end", opacity: 0.4 }}>
               {[20, 14, 10, 17, 12, 8].map((h, i) => (
                 <div key={i} style={{ width: "7px", height: `${h}px`, background: C.copper, borderRadius: "2px" }} />
               ))}
             </div>
             <div>
-              <div style={{ fontSize: "clamp(20px, 3.6vw, 34px)", color: C.cream, lineHeight: 1.4, letterSpacing: "0.02em", minHeight: "144px" }}>
+              <div style={{ fontSize: "clamp(24px, 3.4vw, 46px)", color: C.cream, lineHeight: 1.45, letterSpacing: "0.02em", minHeight: "190px" }}>
                 <Typewriter text={"BUILDING\nTHINGS WORTH\nSHIPPING"} style={{ color: C.cream }} />
               </div>
               <div style={{ marginTop: "16px", fontSize: "7px", color: C.copper, letterSpacing: "0.08em" }}>one project at a time</div>
@@ -166,7 +166,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
 
         {/* ROW 2 — three showcases packed */}
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
-          <Box dark onClick={() => onNav("work")} arrow style={{ minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box dark onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Label dark>TECH WORKS</Label>
             <div>
               <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
@@ -179,12 +179,12 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
               <div style={{ fontSize: "8px", color: C.cream, letterSpacing: "0.04em", lineHeight: 1.6 }}>What I&apos;ve built<br />with data &amp; code</div>
             </div>
           </Box>
-          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Label>EXPERIENCE</Label>
             <div style={{ flex: 1, margin: "10px 0", borderRadius: "5px", background: "linear-gradient(160deg,#C8C0B0,#A8A098)", minHeight: "60px" }} />
             <div style={{ fontSize: "8px", color: C.dark, letterSpacing: "0.04em", lineHeight: 1.6 }}>2 internships</div>
           </Box>
-          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <Label>PROJECTS</Label>
             <div style={{ flex: 1, margin: "10px 0", borderRadius: "5px", background: "linear-gradient(135deg,#D4C4A8,#B89870)", minHeight: "60px" }} />
             <div style={{ fontSize: "8px", color: C.dark, letterSpacing: "0.04em", lineHeight: 1.6 }}>3 side builds</div>
@@ -225,7 +225,7 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
           <Box style={{ padding: "14px 16px 16px" }}>
             <Label>IN THE STACK</Label>
-            <div style={{ position: "relative", height: "360px", marginTop: "8px" }}>
+            <div style={{ position: "relative", height: "460px", marginTop: "8px" }}>
               {tiles.map((t) => (
                 <div
                   key={t.label}
@@ -247,11 +247,11 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           </Box>
 
           <div style={{ display: "grid", gridTemplateRows: "1fr auto", gap: GAP }}>
-            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", minHeight: "120px" }}>
+            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", minHeight: "150px" }}>
               <div style={{ fontSize: "9px", color: C.dark, lineHeight: 2, letterSpacing: "0.04em" }}>small steps,<br />big outcomes</div>
               <div style={{ marginTop: "12px", fontSize: "7px", color: C.copper, opacity: 0.6 }}>✦ ✦ ✦</div>
             </Box>
-            <Box dark style={{ minHeight: "120px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Box dark style={{ minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ fontSize: "8px", color: C.cream, lineHeight: 1.9, letterSpacing: "0.03em" }}>DON&apos;T BE SHY,<br />HIT ME UP</div>
               <a href="mailto:summerpandey23@augustana.edu" style={{ marginTop: "10px", fontSize: "5px", color: C.copper, opacity: 0.9, textDecoration: "none" }}>summerpandey23@augustana.edu</a>
             </Box>
@@ -262,12 +262,12 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
         {/* ROW 4 — profile (wide) + quote */}
         <Reveal style={{ marginBottom: GAP }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: GAP }}>
-          <Box style={{ padding: 0, minHeight: "150px", display: "flex" }}>
+          <Box style={{ padding: 0, minHeight: "230px", display: "flex" }}>
             <div style={{ flex: 1, background: "linear-gradient(160deg,#D4C4A8,#B8A080)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: "6px", color: "rgba(92,61,32,0.4)", letterSpacing: "0.16em" }}>SUMMER PANDEY</span>
+              <span style={{ fontSize: "7px", color: "rgba(92,61,32,0.4)", letterSpacing: "0.16em" }}>SUMMER PANDEY</span>
             </div>
           </Box>
-          <Box dark style={{ minHeight: "150px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <Box dark style={{ minHeight: "230px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <div>
               <div style={{ fontSize: "9px", color: C.cream, lineHeight: 2.1, letterSpacing: "0.05em", opacity: 0.92 }}>
                 &quot;BUILD THINGS,<br />SHIP THINGS,<br />LEARN FAST.&quot;
