@@ -1,7 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Github, ArrowUpRight, FileText } from "lucide-react";
+import {
+  Github,
+  ArrowUpRight,
+  FileText,
+  Activity,
+  Dumbbell,
+  Stethoscope,
+  Aperture,
+  Coins,
+  Navigation,
+  BarChart3,
+  Cast,
+  CircleDot,
+  TrendingUp,
+  Trophy,
+  type LucideIcon,
+} from "lucide-react";
 import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
 import { Reveal } from "./fx";
 
@@ -34,7 +50,7 @@ type Filter = "All Projects" | Category;
 
 type Project = {
   title: string;
-  emoji: string;
+  icon: LucideIcon;
   award?: string;
   desc: string;
   grad: string; // banner gradient
@@ -47,7 +63,7 @@ type Project = {
 const PROJECTS: Project[] = [
   {
     title: "VentureGain",
-    emoji: "💪",
+    icon: Activity,
     desc: "A full-stack health-tracking dashboard used by 20+ users — workouts, nutrition, sleep, energy & hydration in one place, with photo/voice/text logging.",
     grad: "linear-gradient(150deg, #c0453a, #5c1414)",
     tags: [
@@ -61,7 +77,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Wlog",
-    emoji: "🏋️",
+    icon: Dumbbell,
     desc: "A Google Chrome extension to log workouts from plain language — cut manual entry 40%, 200+ entries stored.",
     grad: "linear-gradient(150deg, #d97a4d, #8a3a1e)",
     tags: [
@@ -75,8 +91,8 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Preventia",
-    emoji: "🩺",
-    award: "🏆 Best Use of Gemini AI",
+    icon: Stethoscope,
+    award: "Best Use of Gemini AI",
     desc: "A Flutter app for preventive care: personalized health checklists by age, gender & local disease data, with a live leaderboard.",
     grad: "linear-gradient(150deg, #b23a3a, #6b1f1f)",
     tags: [
@@ -90,7 +106,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Portfolio Website",
-    emoji: "🎞️",
+    icon: Aperture,
     desc: "The site you're looking at right now — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
     grad: "linear-gradient(150deg, #8a4a4a, #3a1616)",
     tags: [
@@ -104,7 +120,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Crypto Sentiment Analyzer",
-    emoji: "🪙",
+    icon: Coins,
     desc: "A Python pipeline that scores crypto news & social sentiment with RoBERTa and VADER — 72% accuracy against labeled data.",
     grad: "linear-gradient(150deg, #d9895a, #a34a1e)",
     tags: [
@@ -118,7 +134,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Pi Car",
-    emoji: "🚗",
+    icon: Navigation,
     desc: "A robotics car that drives on its own — real-time lane detection for autonomous navigation on a Raspberry Pi.",
     grad: "linear-gradient(150deg, #9a5a52, #4a2018)",
     tags: [
@@ -132,7 +148,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Data Project",
-    emoji: "📊",
+    icon: BarChart3,
     desc: "Twitter sentiment analysis — cleaning, modeling and visualizing public sentiment from tweet data.",
     grad: "linear-gradient(150deg, #c96a4a, #7a2e1e)",
     tags: [
@@ -146,7 +162,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "CS SI · AuraTV",
-    emoji: "📺",
+    icon: Cast,
     desc: "AuraTV — a streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
     grad: "linear-gradient(150deg, #8a3230, #2a0e0e)",
     tags: [
@@ -160,7 +176,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Volleyball Organizer",
-    emoji: "🏐",
+    icon: CircleDot,
     desc: "A volleyball tournament organizer — building brackets, scheduling matches and tracking results.",
     grad: "linear-gradient(150deg, #d16a4a, #8a3018)",
     tags: [
@@ -173,7 +189,7 @@ const PROJECTS: Project[] = [
   },
   {
     title: "MMM",
-    emoji: "📈",
+    icon: TrendingUp,
     desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes, with SQL & Python and channel-ROI reporting.",
     grad: "linear-gradient(150deg, #b04a3a, #5a1e14)",
     tags: [
@@ -224,7 +240,7 @@ function ProjectCard({ p }: { p: Project }) {
         boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
       }}
     >
-      {/* banner: gradient backdrop, big emoji, award ribbon, link button */}
+      {/* banner: gradient backdrop, sigil mark, award ribbon, link button */}
       <div
         style={{
           position: "relative",
@@ -237,8 +253,21 @@ function ProjectCard({ p }: { p: Project }) {
           justifyContent: "center",
         }}
       >
-        <span className="card-emoji" style={{ fontSize: "58px", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.18))" }}>
-          {p.emoji}
+        <span
+          className="card-icon"
+          style={{
+            display: "flex",
+            width: "84px",
+            height: "84px",
+            borderRadius: "50%",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.22)",
+            filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))",
+          }}
+        >
+          <p.icon size={40} color={C.cream} strokeWidth={1.4} />
         </span>
         {p.award && (
           <span
@@ -246,6 +275,9 @@ function ProjectCard({ p }: { p: Project }) {
               position: "absolute",
               top: "12px",
               left: "12px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
               background: "rgba(20,8,7,0.8)",
               color: C.cream,
               fontSize: "10px",
@@ -255,6 +287,7 @@ function ProjectCard({ p }: { p: Project }) {
               borderRadius: "999px",
             }}
           >
+            <Trophy size={11} color={C.cream} strokeWidth={2} />
             {p.award}
           </span>
         )}

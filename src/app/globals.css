@@ -274,11 +274,11 @@ body::after {
 }
 
 /* project-card emoji tips its hat when the card lifts */
-.card-emoji {
+.card-icon {
   display: inline-block;
   transition: transform 0.35s cubic-bezier(0.34, 1.6, 0.64, 1);
 }
-.pbox:hover .card-emoji {
+.pbox:hover .card-icon {
   transform: scale(1.14) rotate(-6deg);
 }
 
@@ -322,6 +322,6 @@ body::after {
   .tab,
   .icon-btn,
   .chip,
-  .card-emoji,
+  .card-icon,
   .tile { transition: none; }
 }

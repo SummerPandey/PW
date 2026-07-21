@@ -1,4 +1,4 @@
-import { Linkedin, Github, FileText, ArrowUpRight } from "lucide-react";
+import { Linkedin, Github, FileText, ArrowUpRight, Trophy } from "lucide-react";
 import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
 import { Typewriter, Reveal, Sprout } from "./fx";
 
@@ -315,7 +315,8 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   textDecoration: "none",
                 }}
               >
-                🏆 Best Use of Gemini AI · HackAugie
+                <Trophy size={13} color="#1a0605" strokeWidth={2.2} />
+                Best Use of Gemini AI · HackAugie
               </a>
               {WINS.map((win) => (
                 <span
