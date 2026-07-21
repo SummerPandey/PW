@@ -1,248 +1,521 @@
-import { Clock } from "./fx";
+"use client";
 
-const C = { bg: "#EDE3CF", dark: "#241A0F", mid: "#5C3D20", copper: "#B87840", cream: "#FBF6EC", border: "rgba(92,61,32,0.18)", muted: "rgba(92,61,32,0.45)" };
+import { useState } from "react";
+import { Github, ArrowUpRight, FileText } from "lucide-react";
+import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
+import { Reveal } from "./fx";
 
-// ── small text helpers (Press Start 2P is tiny — keep sizes small) ──
-function Line({ children, dark, dim }: { children: React.ReactNode; dark?: boolean; dim?: boolean }) {
-  return (
-    <div style={{ fontSize: "6px", lineHeight: 2, letterSpacing: "0.04em", color: dim ? C.muted : dark ? "rgba(251,246,236,0.85)" : C.mid }}>
-      {children}
-    </div>
-  );
-}
+/* ────────────────────────────────────────────────────────────────────
+   WorkPage — the project garden: filterable project cards, a compact
+   résumé strip (experience / education / toolbox), and a footer CTA.
+   ──────────────────────────────────────────────────────────────────── */
 
-function Bullet({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
-  return (
-    <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-      <span style={{ fontSize: "6px", color: C.copper, flexShrink: 0 }}>▸</span>
-      <span style={{ fontSize: "6px", lineHeight: 1.9, letterSpacing: "0.03em", color: dark ? "rgba(251,246,236,0.8)" : C.mid }}>{children}</span>
-    </div>
-  );
-}
+/* ── project data ──────────────────────────────────────────────────── */
 
-function Entry({ title, meta, dark, children }: { title: string; meta: string; dark?: boolean; children?: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: "14px" }}>
-      <div style={{ fontSize: "7px", color: dark ? C.cream : C.dark, letterSpacing: "0.06em", lineHeight: 1.7 }}>{title}</div>
-      <div style={{ fontSize: "5px", color: dark ? C.copper : C.muted, letterSpacing: "0.08em", marginTop: "5px" }}>{meta}</div>
-      {children}
-    </div>
-  );
-}
+// Hashtag tag colors, keyed by tone.
+const TAG_COLOR = {
+  leaf: C.leaf,
+  teal: C.teal,
+  sun: "#c9702e",
+  wood: C.wood,
+} as const;
 
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{ display: "inline-block", border: `1px solid ${C.border}`, borderRadius: "4px", padding: "3px 6px", margin: "0 4px 4px 0", fontSize: "5px", color: C.mid, letterSpacing: "0.05em" }}>
-      {children}
-    </span>
-  );
-}
+type Category =
+  | "AI/ML"
+  | "Backend"
+  | "Frontend"
+  | "UI/UX"
+  | "Design"
+  | "Branding"
+  | "Illustration"
+  | "Blogs";
 
-interface BoxProps {
-  id: string;
+type Filter = "All Projects" | Category;
+
+type Project = {
   title: string;
-  dark?: boolean;
-  gridStyle: React.CSSProperties;
-  children: React.ReactNode;
+  emoji: string;
+  award?: string;
+  desc: string;
+  grad: string; // banner gradient
+  tags: { label: string; tone: keyof typeof TAG_COLOR }[];
+  link: string;
+  linkIcon: "github" | "devpost" | "resume";
+  cats: Category[];
+};
+
+const PROJECTS: Project[] = [
+  {
+    title: "VentureGain",
+    emoji: "💪",
+    desc: "A full-stack health-tracking dashboard used by 20+ users — workouts, nutrition, sleep, energy & hydration in one place, with photo/voice/text logging.",
+    grad: "linear-gradient(150deg, #c0453a, #5c1414)",
+    tags: [
+      { label: "react", tone: "leaf" },
+      { label: "typescript", tone: "wood" },
+      { label: "supabase", tone: "teal" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["Frontend", "UI/UX"],
+  },
+  {
+    title: "Wlog",
+    emoji: "🏋️",
+    desc: "A Google Chrome extension to log workouts from plain language — cut manual entry 40%, 200+ entries stored.",
+    grad: "linear-gradient(150deg, #d97a4d, #8a3a1e)",
+    tags: [
+      { label: "chrome", tone: "teal" },
+      { label: "openai", tone: "leaf" },
+      { label: "nodejs", tone: "sun" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["AI/ML"],
+  },
+  {
+    title: "Preventia",
+    emoji: "🩺",
+    award: "🏆 Best Use of Gemini AI",
+    desc: "A Flutter app for preventive care: personalized health checklists by age, gender & local disease data, with a live leaderboard.",
+    grad: "linear-gradient(150deg, #b23a3a, #6b1f1f)",
+    tags: [
+      { label: "flutter", tone: "teal" },
+      { label: "firebase", tone: "sun" },
+      { label: "geminiai", tone: "leaf" },
+    ],
+    link: "https://devpost.com/software/preventia-sblncy",
+    linkIcon: "devpost",
+    cats: ["AI/ML"],
+  },
+  {
+    title: "Portfolio Website",
+    emoji: "🎞️",
+    desc: "The site you're looking at right now — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
+    grad: "linear-gradient(150deg, #8a4a4a, #3a1616)",
+    tags: [
+      { label: "nextjs", tone: "leaf" },
+      { label: "react", tone: "teal" },
+      { label: "typescript", tone: "wood" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["Design", "Branding"],
+  },
+  {
+    title: "Crypto Sentiment Analyzer",
+    emoji: "🪙",
+    desc: "A Python pipeline that scores crypto news & social sentiment with RoBERTa and VADER — 72% accuracy against labeled data.",
+    grad: "linear-gradient(150deg, #d9895a, #a34a1e)",
+    tags: [
+      { label: "python", tone: "leaf" },
+      { label: "roberta", tone: "sun" },
+      { label: "vader", tone: "teal" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["AI/ML", "Backend"],
+  },
+  {
+    title: "Pi Car",
+    emoji: "🚗",
+    desc: "A robotics car that drives on its own — real-time lane detection for autonomous navigation on a Raspberry Pi.",
+    grad: "linear-gradient(150deg, #9a5a52, #4a2018)",
+    tags: [
+      { label: "python", tone: "leaf" },
+      { label: "opencv", tone: "teal" },
+      { label: "raspberrypi", tone: "wood" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["AI/ML"],
+  },
+  {
+    title: "Data Project",
+    emoji: "📊",
+    desc: "Twitter sentiment analysis — cleaning, modeling and visualizing public sentiment from tweet data.",
+    grad: "linear-gradient(150deg, #c96a4a, #7a2e1e)",
+    tags: [
+      { label: "python", tone: "leaf" },
+      { label: "nlp", tone: "teal" },
+      { label: "datascience", tone: "wood" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["Illustration", "Blogs"],
+  },
+  {
+    title: "CS SI · AuraTV",
+    emoji: "📺",
+    desc: "AuraTV — a streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
+    grad: "linear-gradient(150deg, #8a3230, #2a0e0e)",
+    tags: [
+      { label: "flutter", tone: "sun" },
+      { label: "firebase", tone: "wood" },
+      { label: "youtubeapi", tone: "teal" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["Frontend"],
+  },
+  {
+    title: "Volleyball Organizer",
+    emoji: "🏐",
+    desc: "A volleyball tournament organizer — building brackets, scheduling matches and tracking results.",
+    grad: "linear-gradient(150deg, #d16a4a, #8a3018)",
+    tags: [
+      { label: "app", tone: "leaf" },
+      { label: "scheduling", tone: "teal" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["Branding"],
+  },
+  {
+    title: "MMM",
+    emoji: "📈",
+    desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes, with SQL & Python and channel-ROI reporting.",
+    grad: "linear-gradient(150deg, #b04a3a, #5a1e14)",
+    tags: [
+      { label: "python", tone: "leaf" },
+      { label: "sql", tone: "teal" },
+      { label: "marketing", tone: "wood" },
+    ],
+    link: "/Summer_Pandey_Resume.pdf",
+    linkIcon: "resume",
+    cats: ["Illustration", "Blogs"],
+  },
+];
+
+const TABS: Filter[] = [
+  "All Projects", "AI/ML", "Backend", "Frontend", "UI/UX",
+  "Design", "Branding", "Illustration", "Blogs",
+];
+
+const SKILLS = [
+  "Python", "Java", "C", "JavaScript", "TypeScript", "Dart", "SQL",
+  "React", "Flutter", "Node.js", "Express.js", "Firebase", "Supabase",
+  "PyTorch", "TensorFlow", "scikit-learn", "Docker", "Git",
+];
+
+function countFor(filter: Filter) {
+  if (filter === "All Projects") return PROJECTS.length;
+  return PROJECTS.filter((p) => p.cats.includes(filter)).length;
 }
 
-function CategoryBox({ id, title, dark, gridStyle, children }: BoxProps) {
+/* ── card pieces ───────────────────────────────────────────────────── */
+
+function LinkIcon({ kind }: { kind: Project["linkIcon"] }) {
+  if (kind === "github") return <Github size={16} color={C.cream} />;
+  if (kind === "resume") return <FileText size={16} color={C.cream} />;
+  return <ArrowUpRight size={16} color={C.cream} strokeWidth={2.4} />;
+}
+
+function ProjectCard({ p }: { p: Project }) {
   return (
     <div
       className="pbox"
       style={{
-        position: "relative",
-        background: dark ? C.dark : C.cream,
-        borderRadius: "8px",
-        border: `1px solid ${dark ? "rgba(255,255,255,0.07)" : C.border}`,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "200px",
-        ...gridStyle,
+        width: "100%",
+        background: C.panel,
+        borderRadius: "22px",
+        border: `1px solid ${C.border}`,
+        padding: "14px",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
       }}
     >
+      {/* banner: gradient backdrop, big emoji, award ribbon, link button */}
       <div
         style={{
-          borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.07)" : C.border}`,
-          padding: "8px 14px",
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: "6px",
-          color: dark ? C.cream : C.dark,
-          letterSpacing: "0.1em",
+          position: "relative",
+          height: "172px",
+          borderRadius: "16px",
+          background: p.grad,
+          overflow: "hidden",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          flexShrink: 0,
+          justifyContent: "center",
         }}
       >
-        <span>{id} · {title}</span>
-        <span style={{ fontSize: "5px", color: C.copper, opacity: 0.7 }}>· · ·</span>
+        <span className="card-emoji" style={{ fontSize: "58px", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.18))" }}>
+          {p.emoji}
+        </span>
+        {p.award && (
+          <span
+            style={{
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              background: "rgba(20,8,7,0.8)",
+              color: C.cream,
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              padding: "5px 10px",
+              borderRadius: "999px",
+            }}
+          >
+            {p.award}
+          </span>
+        )}
+        <a
+          href={p.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${p.title}`}
+          className="btn-bounce"
+          style={{
+            position: "absolute",
+            top: "12px",
+            right: "12px",
+            width: "38px",
+            height: "38px",
+            borderRadius: "50%",
+            background: "rgba(20,8,7,0.82)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textDecoration: "none",
+          }}
+        >
+          <LinkIcon kind={p.linkIcon} />
+        </a>
       </div>
+
+      {/* title + description */}
       <div
-        style={{
-          flex: 1,
-          padding: "16px",
-          backgroundImage: `linear-gradient(rgba(92,61,32,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(92,61,32,0.04) 1px, transparent 1px)`,
-          backgroundSize: "18px 18px",
-        }}
+        className="serif"
+        style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "20px", color: C.dark, marginTop: "14px", letterSpacing: "0.005em" }}
       >
-        {children}
+        {p.title}
+      </div>
+      <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.6, color: C.moss, marginTop: "8px", minHeight: "82px" }}>
+        {p.desc}
+      </p>
+
+      {/* colored hashtags */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+        {p.tags.map((tag) => (
+          <span key={tag.label} style={{ fontSize: "13px", fontWeight: 700, color: TAG_COLOR[tag.tone] }}>
+            #{tag.label}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
-export function WorkPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
+/* ── the page ──────────────────────────────────────────────────────── */
+
+export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
+  const [filter, setFilter] = useState<Filter>("All Projects");
+  const shown = PROJECTS.filter((p) => filter === "All Projects" || p.cats.includes(filter));
+
+  const resumeCard: React.CSSProperties = {
+    background: C.panel,
+    borderRadius: "20px",
+    border: `1px solid ${C.border}`,
+    padding: "20px 22px",
+  };
+  const resumeCardDark: React.CSSProperties = {
+    background: DARK_GRAD,
+    borderRadius: "20px",
+    border: "1px solid rgba(226,72,58,0.18)",
+    padding: "20px 22px",
+  };
+  const cardLabel = (dark?: boolean): React.CSSProperties => ({
+    fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: dark ? C.sun : C.muted,
+  });
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        fontFamily: "'Press Start 2P', monospace",
-        backgroundColor: C.bg,
-        backgroundImage: `
-          linear-gradient(rgba(92,61,32,0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(92,61,32,0.07) 1px, transparent 1px)
-        `,
-        backgroundSize: "28px 28px",
-      }}
-    >
-      {/* ── NAV ── */}
-      <nav
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          background: `${C.bg}e0`,
-          backdropFilter: "blur(10px)",
-          borderBottom: `1px solid ${C.border}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 28px", height: "46px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ display: "flex", gap: "2px", alignItems: "flex-end" }}>
-            <div style={{ width: "6px", height: "16px", background: C.dark, borderRadius: "2px" }} />
-            <div style={{ width: "6px", height: "11px", background: C.copper, borderRadius: "2px" }} />
-            <div style={{ width: "6px", height: "7px", background: C.mid, borderRadius: "2px" }} />
+    <div style={{ minHeight: "100vh", fontFamily: FONT, ...DOT_GRID }}>
+      <div style={{ padding: "92px clamp(16px, 3vw, 36px) 56px", maxWidth: "1240px", margin: "0 auto" }}>
+        {/* ── intro ── */}
+        <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: C.wood }}>
+          What I&apos;ve built
+        </div>
+        <h1
+          className="serif"
+          style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(34px, 4vw, 56px)", color: C.dark, margin: "8px 0 0", letterSpacing: "0.01em" }}
+        >
+          My Work.
+        </h1>
+        <p style={{ maxWidth: "620px", marginTop: "14px", fontSize: "15px", fontWeight: 500, lineHeight: 1.7, color: C.moss }}>
+          A collection of things I&apos;ve built. Filter by what you&apos;re curious about —
+          each card links out to its code, write-up, or résumé entry.
+        </p>
+
+        {/* ── filter tabs ── */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "26px" }}>
+          {TABS.map((tab) => {
+            const on = filter === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className="tab"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "7px",
+                  cursor: "pointer",
+                  borderRadius: "999px",
+                  padding: "9px 16px",
+                  fontFamily: FONT,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  letterSpacing: "0.01em",
+                  border: on ? "1px solid transparent" : `1px solid ${C.border}`,
+                  background: on ? `linear-gradient(90deg, ${C.leaf}, ${C.sun})` : C.panel,
+                  color: on ? "#1a0605" : C.moss,
+                  boxShadow: on ? "0 6px 16px rgba(226,72,58,0.22)" : "none",
+                }}
+              >
+                {tab}
+                <span style={{ fontWeight: 700, opacity: 0.7, fontSize: "12px" }}>({countFor(tab)})</span>
+              </button>
+            );
+          })}
+        </div>
+        <div
+          style={{
+            height: "2px",
+            background: `linear-gradient(90deg, ${C.leaf}, ${C.wood}, transparent)`,
+            borderRadius: "2px",
+            margin: "18px 0 24px",
+          }}
+        />
+
+        {/* ── filtered project grid ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "20px" }}>
+          {shown.map((p, i) => (
+            <Reveal key={`${filter}-${p.title}`} delay={i * 55} style={{ display: "flex" }}>
+              <ProjectCard p={p} />
+            </Reveal>
+          ))}
+        </div>
+
+        {/* ── compact résumé strip: experience / education / toolbox ── */}
+        <Reveal style={{ marginTop: "48px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+            <div className="pbox" style={resumeCardDark}>
+              <div style={cardLabel(true)}>Experience</div>
+              <div style={{ marginTop: "12px" }}>
+                <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream }}>
+                  NVIDIA AI &amp; Machine Learning Instructor
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
+                  iD Tech at Stanford University · Jun 2026 – Aug 2026
+                </div>
+                <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
+                  Software Engineering Intern
+                </div>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
+                  Sports Media Inc. · Jun 2025 – Aug 2025
+                </div>
+              </div>
+            </div>
+
+            <div className="pbox" style={resumeCard}>
+              <div style={cardLabel()}>Education &amp; Leadership</div>
+              <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.dark, marginTop: "12px" }}>
+                Augustana College
+              </div>
+              <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "4px", lineHeight: 1.6 }}>
+                B.A. Computer Science &amp; Data Science · Minor in Math (2023–2027)
+              </div>
+              <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "10px", lineHeight: 1.6 }}>
+                Community Advisor · Google Dev Group Co-Lead — mentored 200+ students, ran workshops &amp; hackathons.
+              </div>
+            </div>
+
+            <div className="pbox" style={resumeCard}>
+              <div style={cardLabel()}>Toolbox</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                {SKILLS.map((skill) => (
+                  <span
+                    key={skill}
+                    className="chip"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: C.bark,
+                      border: `1px solid ${C.border}`,
+                      background: "rgba(226,72,58,0.1)",
+                      borderRadius: "999px",
+                      padding: "4px 11px",
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-          <span style={{ fontSize: "7px", color: C.dark, letterSpacing: "0.1em" }}>SUMMER PANDEY</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <Clock />
-          <button className="navlink btn-bounce" onClick={() => onNav("about")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.muted, letterSpacing: "0.1em" }}>ABOUT</button>
-          <button className="navlink btn-bounce" style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "'Press Start 2P', monospace", fontSize: "6px", color: C.copper, letterSpacing: "0.1em" }}>WORK</button>
-        </div>
-      </nav>
+        </Reveal>
 
-      {/* ── CONTENT ── */}
-      <div style={{ padding: "70px clamp(16px, 3vw, 36px) 40px", maxWidth: "1400px", margin: "0 auto" }}>
-
-        {/* Header row */}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "16px" }}>
-          <div style={{ fontSize: "clamp(12px, 2.2vw, 20px)", color: C.dark, letterSpacing: "0.08em" }}>MY WORK</div>
-          <a href="/Summer_Pandey_Resume.pdf" target="_blank" rel="noopener noreferrer" style={{ fontSize: "6px", color: C.copper, letterSpacing: "0.1em", textDecoration: "none" }}>↓ RESUME.PDF</a>
-        </div>
-        <div style={{ height: "1px", background: C.border, marginBottom: "14px" }} />
-
-        {/* Category grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-
-          {/* 01 — EXPERIENCE (wide, dark) */}
-          <CategoryBox id="01" title="EXPERIENCE" dark gridStyle={{ gridColumn: "1 / 3", gridRow: "1" }}>
-            <Entry dark title="Marketing Data Science Intern" meta="AUGUSTANA COLLEGE · AUG 2025 – PRESENT">
-              <Bullet dark>Built a Marketing Mix Model (MMM) to quantify how channels drove college applications</Bullet>
-              <Bullet dark>Unified multi-source campaign data with SQL & Python; built outcome-by-channel charts</Bullet>
-              <Bullet dark>Delivered a stakeholder report with channel ROI insights to guide budget decisions</Bullet>
-            </Entry>
-            <Entry dark title="Sports Media Intern" meta="SPORTS MEDIA INC. · JUN 2025 – AUG 2025">
-              <Bullet dark>Built & deployed an automated AI voice agent (Twilio Voice API) handling 1,000+ calls/week</Bullet>
-              <Bullet dark>Raised call completion 25% via optimized flows and RESTful API integration</Bullet>
-              <Bullet dark>Cut system failure rates 15% with error detection and routine code reviews</Bullet>
-            </Entry>
-          </CategoryBox>
-
-          {/* 02 — EDUCATION */}
-          <CategoryBox id="02" title="EDUCATION" gridStyle={{ gridColumn: "3", gridRow: "1" }}>
-            <Entry title="Augustana College" meta="ROCK ISLAND, IL · AUG 2023 – MAY 2027">
-              <Line>B.A. Computer Science & Data Science</Line>
-              <Line>Minor in Mathematics</Line>
-            </Entry>
-            <Line dim>COURSEWORK</Line>
-            <div style={{ marginTop: "6px" }}>
-              <Chip>Machine Learning</Chip>
-              <Chip>Data Structures</Chip>
-              <Chip>Algorithms</Chip>
-              <Chip>Operating Systems</Chip>
-              <Chip>Statistics</Chip>
+        {/* ── footer CTA ── */}
+        <Reveal style={{ marginTop: "20px" }}>
+          <div
+            style={{
+              background: DARK_GRAD,
+              borderRadius: "20px",
+              border: "1px solid rgba(226,72,58,0.18)",
+              padding: "24px 28px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "16px",
+            }}
+          >
+            <div
+              className="serif"
+              style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(18px, 2vw, 26px)", color: C.cream, lineHeight: 1.35 }}
+            >
+              Let&apos;s grow cool <span style={{ color: C.sun }}>proud</span>-ucts together ✦
             </div>
-          </CategoryBox>
-
-          {/* 03 — LEADERSHIP */}
-          <CategoryBox id="03" title="LEADERSHIP" gridStyle={{ gridColumn: "1", gridRow: "2" }}>
-            <Entry title="Resident Advisor" meta="AUGUSTANA · AUG 2024 – PRESENT">
-              <Bullet>Mentored 200+ students; ran programs boosting engagement 25%</Bullet>
-            </Entry>
-            <Entry title="Google Dev Group Co-Lead" meta="AUGUSTANA · MAY 2024 – PRESENT">
-              <Bullet>Led workshops & hackathons; managed tech-community partnerships</Bullet>
-            </Entry>
-          </CategoryBox>
-
-          {/* 04 — SKILLS (wide, dark) */}
-          <CategoryBox id="04" title="TECHNICAL SKILLS" dark gridStyle={{ gridColumn: "2 / 4", gridRow: "2" }}>
-            <Line dark dim>LANGUAGES</Line>
-            <Line dark>Python · SQL · Java · C · JavaScript · TypeScript · R · Dart · HTML/CSS</Line>
-            <div style={{ height: "8px" }} />
-            <Line dark dim>LIBRARIES</Line>
-            <Line dark>pandas · NumPy · scikit-learn · TensorFlow · PyTorch · OpenCV · Matplotlib</Line>
-            <div style={{ height: "8px" }} />
-            <Line dark dim>FRAMEWORKS / TOOLS</Line>
-            <Line dark>React · Node.js · Express · MongoDB · Flutter · Firebase · Git</Line>
-          </CategoryBox>
-
-          {/* 05 — CONTACT (dark) */}
-          <CategoryBox id="05" title="CONTACT" dark gridStyle={{ gridColumn: "1", gridRow: "3" }}>
-            <a href="mailto:summerpandey23@augustana.edu" style={{ textDecoration: "none" }}>
-              <Line dark>✉ summerpandey23@augustana.edu</Line>
-            </a>
-            <div style={{ height: "6px" }} />
-            <a href="tel:+13096314748" style={{ textDecoration: "none" }}>
-              <Line dark>☎ +1 309-631-4748</Line>
-            </a>
-            <div style={{ height: "6px" }} />
-            <a href="/Summer_Pandey_Resume.pdf" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <Line dark>↓ download résumé</Line>
-            </a>
-          </CategoryBox>
-
-          {/* 06 — PROJECTS */}
-          <CategoryBox id="06" title="PROJECTS" gridStyle={{ gridColumn: "2", gridRow: "3" }}>
-            <Entry title="Lane-Detection Pi Car" meta="PYTHON · OPENCV · RASPBERRY PI">
-              <Bullet>Real-time lane detection for autonomous navigation</Bullet>
-            </Entry>
-            <Entry title="Automated Workout Log" meta="OPENAI API · NODE.JS">
-              <Bullet>Chrome extension cutting manual entry 40%; 200+ entries stored</Bullet>
-            </Entry>
-            <Entry title="AuraTV" meta="FLUTTER · FIREBASE · YOUTUBE API">
-              <Bullet>Streaming app with autoplay channels & personalized recs</Bullet>
-            </Entry>
-          </CategoryBox>
-
-          {/* 07 — FEATURED · award-winning project */}
-          <CategoryBox id="★" title="WINNER · PREVENTIA" dark gridStyle={{ gridColumn: "3", gridRow: "3" }}>
-            <div className="badge" style={{ display: "inline-block", background: C.copper, borderRadius: "4px", padding: "5px 8px", marginBottom: "12px" }}>
-              <span style={{ fontSize: "5.5px", color: C.dark, letterSpacing: "0.06em" }}>🏆 BEST USE OF GEMINI AI</span>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => goTo("welcome")}
+                className="btn-bounce"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  borderRadius: "999px",
+                  padding: "11px 18px",
+                  cursor: "pointer",
+                  fontFamily: FONT,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  color: C.cream,
+                }}
+              >
+                ← Back to start
+              </button>
+              <a
+                href="mailto:summerpandey23@augustana.edu"
+                className="btn-bounce"
+                style={{
+                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
+                  borderRadius: "999px",
+                  padding: "11px 18px",
+                  textDecoration: "none",
+                  fontFamily: FONT,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  color: "#1a0605",
+                }}
+              >
+                Say hello ✉
+              </a>
             </div>
-            <Line dark dim>HACKAUGIE · FLUTTER · FIREBASE · GEMINI AI</Line>
-            <Bullet dark>Gamified preventive-health app: personalized checklists by age, gender & local disease data</Bullet>
-            <Bullet dark>Built credible, medically-sourced content + a live leaderboard to keep users engaged</Bullet>
-            <div style={{ height: "8px" }} />
-            <Line dark dim>TEAM · OSHAN HAMAL · BINAYAK GURUBACHARYA</Line>
-            <div style={{ height: "8px" }} />
-            <a href="https://devpost.com/software/preventia-sblncy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <Line dark>↗ view on devpost</Line>
-            </a>
-          </CategoryBox>
-
-        </div>
+          </div>
+        </Reveal>
       </div>
     </div>
   );

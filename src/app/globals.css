@@ -1,32 +1,85 @@
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Quicksand:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #f5edd3;
-  --foreground: #241a0f;
+  --background: #0b0706;
+  --foreground: #f5e6df;
+  --leaf: #e2483a;
+  --sun: #ff8a65;
+  --teal: #8a4a4a;
+  --moss: #c7a49b;
+  --bark: #f0dcd2;
+  --wood: #b3766a;
 }
 
 html,
 body {
-  background: var(--background);
+  background:
+    radial-gradient(1100px 620px at 82% -8%, rgba(226, 72, 58, 0.2), transparent 60%),
+    radial-gradient(900px 560px at 102% 42%, rgba(138, 40, 30, 0.14), transparent 55%),
+    radial-gradient(1000px 600px at 0% 112%, rgba(0, 0, 0, 0.6), transparent 60%),
+    linear-gradient(180deg, #0a0504 0%, #020101 100%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: "Press Start 2P", monospace;
+  font-family: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  position: relative;
 }
 
-/* pixel-style scrollbar (ported from the 8-bit design) */
+/* lo-fi film grain, sitting above everything, touching nothing */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+::selection {
+  background: rgba(226, 72, 58, 0.4);
+  color: #1a0605;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sun);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* hide the scrollbar on the horizontal panel scroller */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* display / headings use the soft organic serif */
+.serif {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+/* ember scrollbar — crimson fading into black */
 ::-webkit-scrollbar {
-  width: 6px;
-  background: #ede3cf;
+  width: 10px;
+  background: #080403;
 }
 ::-webkit-scrollbar-thumb {
-  background: #b87840;
-  border-radius: 3px;
+  background: linear-gradient(180deg, #e2483a, #1a0808);
+  border-radius: 999px;
+  border: 2px solid #080403;
 }
 ::-webkit-scrollbar-track {
-  background: #ede3cf;
+  background: #080403;
 }
 
-/* ───────────────────────── 8-bit FX ───────────────────────── */
+/* ───────────────────────── lo-fi FX ───────────────────────── */
 
 @keyframes blink {
   0%, 49% { opacity: 1; }
@@ -37,8 +90,8 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes reveal-bounce {
-  0% { opacity: 0; transform: translateY(26px) scale(0.96); }
-  60% { opacity: 1; transform: translateY(-5px) scale(1.012); }
+  0% { opacity: 0; transform: translateY(22px) scale(0.97); }
+  62% { opacity: 1; transform: translateY(-3px) scale(1.006); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes pop-in {
@@ -55,9 +108,11 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
 }
-@keyframes confetti-fall {
-  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(110vh) rotate(540deg); opacity: 0.15; }
+/* leaves drifting down on the breeze */
+@keyframes leaf-fall {
+  0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 1; }
+  50% { transform: translateY(50vh) translateX(40px) rotate(180deg); }
+  100% { transform: translateY(110vh) translateX(-10px) rotate(420deg); opacity: 0.1; }
 }
 @keyframes boot-bar {
   from { width: 0%; }
@@ -71,34 +126,54 @@ body {
   from { opacity: 0; transform: translate(-50%, 16px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
-
-/* subtle CRT scanlines over everything */
-.crt::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 80;
-  background: repeating-linear-gradient(
-    rgba(36, 26, 15, 0.035) 0 1px,
-    transparent 1px 3px
-  );
+/* gentle leaf sway */
+@keyframes sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+/* sprout growing up from the soil */
+@keyframes grow {
+  0% { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+/* slow sun-glow pulse */
+@keyframes sun-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.04); }
 }
 
-/* blinking terminal cursor */
+/* slow motes of sunlight drifting down like snow */
+@keyframes mote-fall {
+  0% { transform: translateY(-8vh); opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(90vh); opacity: 0; }
+}
+@keyframes mote-sway {
+  0%, 100% { transform: translateX(-9px); }
+  50% { transform: translateX(9px); }
+}
+/* a mote getting slurped into the cursor — pops, then shrinks away */
+@keyframes mote-absorb {
+  0% { transform: scale(1); opacity: 1; }
+  35% { transform: scale(1.75); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* blinking text cursor */
 .cursor {
   animation: blink 1s steps(1) infinite;
 }
 
-/* panel hover lift + copper glow (springy) */
+/* panel hover lift + leafy glow (springy) */
 .pbox {
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .pbox:hover {
   transform: translateY(-5px) scale(1.018);
-  box-shadow: 0 16px 32px rgba(92, 61, 32, 0.26);
-  border-color: rgba(184, 120, 64, 0.6) !important;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.5);
+  border-color: rgba(226, 72, 58, 0.5) !important;
 }
 .pbox:active {
   transform: translateY(-1px) scale(0.99);
@@ -134,6 +209,10 @@ body {
 .bob {
   animation: bob 2.4s ease-in-out infinite;
 }
+.sway {
+  transform-origin: bottom center;
+  animation: sway 3.6s ease-in-out infinite;
+}
 
 /* stack collage tile: straighten + pop on hover */
 .tile {
@@ -141,7 +220,7 @@ body {
 }
 .tile:hover {
   transform: rotate(0deg) scale(1.12) translateY(-4px) !important;
-  box-shadow: 0 18px 36px rgba(92, 61, 32, 0.34) !important;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5) !important;
   z-index: 30 !important;
 }
 
@@ -153,10 +232,69 @@ body {
   animation: reveal-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* nav link underline-on-hover */
+/* filter tab pills — springy lift + smooth color/shadow crossfade */
+.tab {
+  transition: transform 0.22s cubic-bezier(0.34, 1.6, 0.64, 1),
+    background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease,
+    border-color 0.2s ease;
+}
+.tab:hover {
+  transform: translateY(-2px) scale(1.045);
+  box-shadow: 0 8px 18px rgba(226, 72, 58, 0.22);
+}
+.tab:active {
+  transform: scale(0.94);
+}
+
+/* round icon buttons (socials, card links) — fill with sunlight on hover */
+.icon-btn {
+  transition: transform 0.22s cubic-bezier(0.34, 1.8, 0.64, 1),
+    background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.icon-btn:hover {
+  transform: translateY(-3px) scale(1.1);
+  background: rgba(226, 72, 58, 0.18) !important;
+  border-color: rgba(226, 72, 58, 0.55) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+/* small skill / tech chips — gentle lift, leafy tint */
+.chip {
+  transition: transform 0.2s cubic-bezier(0.34, 1.7, 0.64, 1),
+    border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(226, 72, 58, 0.55) !important;
+  background: rgba(226, 72, 58, 0.12) !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* project-card emoji tips its hat when the card lifts */
+.card-emoji {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+.pbox:hover .card-emoji {
+  transform: scale(1.14) rotate(-6deg);
+}
+
+/* warm glowing text links */
+.link-glow {
+  transition: color 0.2s ease, text-shadow 0.25s ease;
+}
+.link-glow:hover {
+  color: #ff8a65 !important;
+  text-shadow: 0 0 14px rgba(226, 72, 58, 0.5);
+}
+
+/* nav link underline-on-hover — grows like a vine */
 .navlink {
   position: relative;
-  transition: color 0.15s ease;
+  transition: color 0.2s ease;
 }
 .navlink::after {
   content: "";
@@ -165,7 +303,8 @@ body {
   bottom: -4px;
   height: 2px;
   width: 0;
-  background: #b87840;
+  background: linear-gradient(90deg, var(--leaf), var(--sun));
+  border-radius: 2px;
   transition: width 0.2s ease;
 }
 .navlink:hover::after {
@@ -176,8 +315,13 @@ body {
   .reveal { opacity: 1; animation: none; }
   .cursor,
   .badge,
-  .bob { animation: none; }
+  .bob,
+  .sway { animation: none; }
   .pbox,
   .btn-bounce,
+  .tab,
+  .icon-btn,
+  .chip,
+  .card-emoji,
   .tile { transition: none; }
 }

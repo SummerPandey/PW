@@ -1,38 +1,37 @@
 import { Linkedin, Github, FileText, ArrowUpRight } from "lucide-react";
-import { Typewriter, Clock, Reveal } from "./fx";
+import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
+import { Typewriter, Reveal, Sprout } from "./fx";
 
-// ── palette (8-bit theme — kept strictly) ───────────────
-const C = {
-  bg: "#EDE3CF",
-  dark: "#241A0F",
-  mid: "#5C3D20",
-  copper: "#B87840",
-  cream: "#FBF6EC",
-  border: "rgba(92,61,32,0.18)",
-  muted: "rgba(92,61,32,0.45)",
-};
+/* ────────────────────────────────────────────────────────────────────
+   AboutPage — a dense bento grid that fits on one screen:
+   hero, roles & motto, three showcases, achievements, skills,
+   contact, and a footer bar.
+   ──────────────────────────────────────────────────────────────────── */
 
-const FONT = "'Press Start 2P', monospace";
-const GAP = "12px";
+const GAP = "6px"; // tight gutter between bento boxes
+const RADIUS = "18px";
 
-function Logo() {
-  return (
-    <div className="bob" style={{ display: "flex", gap: "3px", alignItems: "flex-end" }}>
-      <div style={{ width: "6px", height: "16px", background: C.dark, borderRadius: "2px" }} />
-      <div style={{ width: "6px", height: "11px", background: C.copper, borderRadius: "2px" }} />
-      <div style={{ width: "6px", height: "7px", background: C.mid, borderRadius: "2px" }} />
-    </div>
-  );
-}
+/* ── tiny building blocks ──────────────────────────────────────────── */
 
+/** Small uppercase section label, e.g. "ROLES". */
 function Label({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
   return (
-    <div style={{ fontSize: "6px", color: dark ? "rgba(251,246,236,0.5)" : C.muted, letterSpacing: "0.22em" }}>
+    <div
+      style={{
+        fontSize: "11px",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        color: dark ? "rgba(243,222,210,0.55)" : C.muted,
+        letterSpacing: "0.18em",
+      }}
+    >
       {children}
     </div>
   );
 }
 
+/** One bento box. `dark` flips to the forest-walnut gradient,
+    `arrow` adds a corner arrow, `flat` turns off the hover lift. */
 function Box({
   dark,
   children,
@@ -54,109 +53,163 @@ function Box({
       className={flat ? undefined : "pbox"}
       style={{
         position: "relative",
-        background: dark ? C.dark : C.cream,
-        border: `1px solid ${dark ? "rgba(255,255,255,0.07)" : C.border}`,
-        borderRadius: "8px",
-        padding: "14px 16px",
+        background: dark ? DARK_GRAD : C.panel,
+        border: `1px solid ${dark ? "rgba(226,72,58,0.18)" : C.border}`,
+        borderRadius: RADIUS,
+        padding: "16px 18px",
         cursor: onClick ? "pointer" : "default",
         overflow: "hidden",
+        boxShadow: dark ? "none" : "0 2px 10px rgba(0,0,0,0.35)",
         ...style,
       }}
     >
       {children}
       {arrow && (
-        <div style={{ position: "absolute", top: "12px", right: "12px" }}>
-          <ArrowUpRight size={13} color={C.copper} strokeWidth={1.5} opacity={0.8} />
+        <div style={{ position: "absolute", top: "14px", right: "14px" }}>
+          <ArrowUpRight size={15} color={C.sun} strokeWidth={2} opacity={0.85} />
         </div>
       )}
     </div>
   );
 }
 
-export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
-  // packed overlapping collage tiles
-  const tiles: { label: string; top: number; left: string; w: number; h: number; rot: number; grad: string; z: number }[] = [
-    { label: "PYTHON", top: 0, left: "1%", w: 180, h: 140, rot: -3, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 2 },
-    { label: "SQL", top: 95, left: "19%", w: 150, h: 175, rot: 4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 4 },
-    { label: "ML", top: 10, left: "39%", w: 168, h: 135, rot: -5, grad: "linear-gradient(160deg,#D4C4A8,#C0AA88)", z: 3 },
-    { label: "REACT", top: 120, left: "60%", w: 158, h: 150, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 5 },
-    { label: "NODE.JS", top: 0, left: "80%", w: 140, h: 125, rot: 6, grad: "linear-gradient(135deg,#D4C4A8,#B8A080)", z: 2 },
-    { label: "OPENCV", top: 250, left: "5%", w: 165, h: 145, rot: 4, grad: "linear-gradient(135deg,#D4C4A8,#B89870)", z: 3 },
-    { label: "FLUTTER", top: 285, left: "33%", w: 170, h: 150, rot: -4, grad: "linear-gradient(160deg,#C8B898,#A89070)", z: 6 },
-    { label: "TWILIO", top: 305, left: "59%", w: 152, h: 130, rot: 5, grad: "linear-gradient(160deg,#C8C0B0,#A8A098)", z: 4 },
-    { label: "FIREBASE", top: 250, left: "81%", w: 135, h: 155, rot: -6, grad: "linear-gradient(160deg,#D4C4A8,#B8A080)", z: 3 },
-    { label: "PYTORCH", top: 175, left: "45%", w: 128, h: 110, rot: 8, grad: "linear-gradient(135deg,#D4C4A8,#C0AA88)", z: 7 },
-  ];
+/* ── content ───────────────────────────────────────────────────────── */
 
+const ROLES = ["Software Engineer", "Data Scientist", "ML · AI Developer"];
+
+const MOTTOS = ["Try things, see what happens", "Push ideas forward", "Just give it a shot"];
+
+// Compact skill set — shown as chips so the whole page fits one screen.
+const SKILLS = [
+  "Python", "Java", "C", "JavaScript", "TypeScript", "Dart", "SQL",
+  "React", "Flutter", "Node.js", "Express.js", "Firebase", "Supabase",
+  "PyTorch", "TensorFlow", "scikit-learn", "Docker", "Git",
+];
+
+// Gamified résumé metrics (the trophy badge is rendered separately).
+const WINS = [
+  "1K+ calls / week",
+  "+25% engagement",
+  "200+ mentored",
+  "−15% failure rate",
+  "40% faster logging",
+];
+
+const SOCIALS = [
+  { Icon: Linkedin, href: "https://www.linkedin.com/", label: "LinkedIn" },
+  { Icon: Github, href: "https://github.com/SummerPandey", label: "GitHub" },
+  { Icon: FileText, href: "/Summer_Pandey_Resume.pdf", label: "Resume" },
+];
+
+/* ── the page ──────────────────────────────────────────────────────── */
+
+export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        fontFamily: FONT,
-        color: C.dark,
-        backgroundColor: C.bg,
-        backgroundImage: `
-          linear-gradient(rgba(92,61,32,0.07) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(92,61,32,0.07) 1px, transparent 1px)
-        `,
-        backgroundSize: "28px 28px",
-      }}
-    >
-      {/* ── NAV ── */}
-      <nav
-        style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          background: `${C.bg}e0`, backdropFilter: "blur(10px)",
-          borderBottom: `1px solid ${C.border}`,
-          display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
-          padding: "0 24px", height: "48px",
-        }}
-      >
-        <button className="navlink btn-bounce" style={{ justifySelf: "start", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.copper, letterSpacing: "0.16em" }}>ABOUT</button>
-        <div style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: "12px" }}>
-          <Logo />
-          <Clock />
-        </div>
-        <button className="navlink btn-bounce" onClick={() => onNav("work")} style={{ justifySelf: "end", background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.muted, letterSpacing: "0.16em" }}>WORK</button>
-      </nav>
-
-      {/* ── DENSE PACKED GRID ── */}
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "70px clamp(16px, 3vw, 36px) 28px" }}>
-
-        {/* ROW 1 — hero (left) + roles & motto (right) */}
+    <div style={{ minHeight: "100vh", fontFamily: FONT, color: C.dark, ...DOT_GRID }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "58px clamp(16px, 3vw, 36px) 10px" }}>
+        {/* ── row 1: hero (left) + roles & motto (right) ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
-          <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "400px", padding: "30px 32px" }}>
-            <div style={{ display: "flex", gap: "4px", alignItems: "flex-end", opacity: 0.4 }}>
-              {[20, 14, 10, 17, 12, 8].map((h, i) => (
-                <div key={i} style={{ width: "7px", height: `${h}px`, background: C.copper, borderRadius: "2px" }} />
-              ))}
+          <Box
+            dark
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: "216px",
+              padding: "20px 26px",
+            }}
+          >
+            {/* sun-glow + swaying sprout */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle, #ff8a65, #e2483a)",
+                  boxShadow: "0 0 22px rgba(226,72,58,0.55)",
+                  animation: "sun-pulse 3s ease-in-out infinite",
+                }}
+              />
+              <span className="sway" style={{ display: "inline-flex" }}>
+                <Sprout size={26} />
+              </span>
             </div>
+
             <div>
-              <div style={{ fontSize: "clamp(24px, 3.4vw, 46px)", color: C.cream, lineHeight: 1.45, letterSpacing: "0.02em", minHeight: "190px" }}>
-                <Typewriter text={"BUILDING\nTHINGS WORTH\nSHIPPING"} style={{ color: C.cream }} />
+              <div
+                className="serif"
+                style={{
+                  fontFamily: SERIF,
+                  fontWeight: 600,
+                  fontSize: "clamp(24px, 2.6vw, 34px)",
+                  color: C.cream,
+                  lineHeight: 1.05,
+                  letterSpacing: "0.005em",
+                  minHeight: "72px",
+                }}
+              >
+                <Typewriter text={"Building\ndata-driven\nsoftware"} style={{ color: C.cream }} />
               </div>
-              <div style={{ marginTop: "16px", fontSize: "7px", color: C.copper, letterSpacing: "0.08em" }}>one project at a time</div>
-              <button className="btn-bounce" onClick={() => onNav("work")} style={{ marginTop: "16px", display: "inline-flex", alignItems: "center", gap: "7px", background: C.copper, border: "none", borderRadius: "4px", padding: "7px 11px", cursor: "pointer", fontFamily: FONT, fontSize: "7px", color: C.dark, letterSpacing: "0.08em" }}>
-                SEE MY WORK <ArrowUpRight size={12} color={C.dark} strokeWidth={2.5} />
+              <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.04em" }}>
+                one project at a time 🎞️
+              </div>
+              <button
+                className="btn-bounce"
+                onClick={() => goTo("works")}
+                style={{
+                  marginTop: "14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
+                  border: "none",
+                  borderRadius: "999px",
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                  fontFamily: FONT,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  color: "#1a0605",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                See my work <ArrowUpRight size={15} color="#1a0605" strokeWidth={2.5} />
               </button>
             </div>
           </Box>
 
           <div style={{ display: "grid", gridTemplateRows: "auto 1fr", gap: GAP }}>
             <Box>
-              <Label>ROLES</Label>
+              <Label>Roles</Label>
               <div style={{ marginTop: "12px" }}>
-                {["SOFTWARE ENGINEER", "DATA SCIENTIST", "ML · AI DEVELOPER"].map((r, i) => (
-                  <div key={r} style={{ fontSize: "8px", color: i === 1 ? C.copper : C.mid, letterSpacing: "0.04em", lineHeight: 2.2 }}>· {r}</div>
+                {ROLES.map((role, i) => (
+                  <div
+                    key={role}
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: i === 1 ? C.leaf : C.moss,
+                      letterSpacing: "0.01em",
+                      lineHeight: 1.65,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ color: C.sun }}>✦</span> {role}
+                  </div>
                 ))}
               </div>
             </Box>
+
             <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <Label>MY MOTTO</Label>
-              <div style={{ marginTop: "10px" }}>
-                {["Try things, see what happens", "Push ideas forward", "Just give it a shot"].map((l) => (
-                  <div key={l} style={{ fontSize: "6px", color: C.mid, lineHeight: 2.3 }}>
-                    <span style={{ color: C.copper }}>✦ </span>{l}
+              <Label>My motto</Label>
+              <div style={{ marginTop: "12px" }}>
+                {MOTTOS.map((line) => (
+                  <div key={line} style={{ fontSize: "13px", fontWeight: 500, color: C.moss, lineHeight: 1.65 }}>
+                    <span style={{ color: C.leaf }}>✦ </span>
+                    {line}
                   </div>
                 ))}
               </div>
@@ -164,143 +217,222 @@ export function AboutPage({ onNav }: { onNav: (p: "about" | "work") => void }) {
           </div>
         </div>
 
-        {/* ROW 2 — three showcases packed */}
+        {/* ── row 2: three showcases, all leading to Works ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
-          <Box dark onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <Label dark>TECH WORKS</Label>
+          <Box
+            dark
+            onClick={() => goTo("works")}
+            arrow
+            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
+          >
+            <Label dark>Tech works</Label>
             <div>
-              <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-                {["PREVENTIA", "MMM"].map((n) => (
-                  <div key={n} style={{ flex: 1, height: "54px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: "5px", color: C.copper, opacity: 0.7 }}>{n}</span>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "9px" }}>
+                {["PREVENTIA", "MMM"].map((name) => (
+                  <div
+                    key={name}
+                    style={{
+                      flex: 1,
+                      height: "38px",
+                      borderRadius: "12px",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: C.sun, opacity: 0.85, letterSpacing: "0.08em" }}>
+                      {name}
+                    </span>
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: "8px", color: C.cream, letterSpacing: "0.04em", lineHeight: 1.6 }}>What I&apos;ve built<br />with data &amp; code</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: C.cream, letterSpacing: "0.01em", lineHeight: 1.45 }}>
+                What I&apos;ve built with data &amp; code
+              </div>
             </div>
           </Box>
-          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <Label>EXPERIENCE</Label>
-            <div style={{ flex: 1, margin: "10px 0", borderRadius: "5px", background: "linear-gradient(160deg,#C8C0B0,#A8A098)", minHeight: "60px" }} />
-            <div style={{ fontSize: "8px", color: C.dark, letterSpacing: "0.04em", lineHeight: 1.6 }}>2 internships</div>
+
+          <Box
+            onClick={() => goTo("works")}
+            arrow
+            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
+          >
+            <Label>Experience</Label>
+            <div
+              style={{
+                flex: 1,
+                margin: "10px 0",
+                borderRadius: "12px",
+                background: "linear-gradient(160deg, #9a5a52, #4a2018)",
+                minHeight: "40px",
+              }}
+            />
+            <div style={{ fontSize: "14px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>2 roles</div>
           </Box>
-          <Box onClick={() => onNav("work")} arrow style={{ minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <Label>PROJECTS</Label>
-            <div style={{ flex: 1, margin: "10px 0", borderRadius: "5px", background: "linear-gradient(135deg,#D4C4A8,#B89870)", minHeight: "60px" }} />
-            <div style={{ fontSize: "8px", color: C.dark, letterSpacing: "0.04em", lineHeight: 1.6 }}>3 side builds</div>
+
+          <Box
+            onClick={() => goTo("works")}
+            arrow
+            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
+          >
+            <Label>Projects</Label>
+            <div
+              style={{
+                flex: 1,
+                margin: "10px 0",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #d9895a, #a34a1e)",
+                minHeight: "40px",
+              }}
+            />
+            <div style={{ fontSize: "14px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>3 side builds</div>
           </Box>
         </div>
 
-        {/* ACHIEVEMENTS — gamified résumé metrics */}
+        {/* ── achievements: trophy badge + metric pills ── */}
         <Reveal style={{ marginBottom: GAP }}>
-          <Box style={{ padding: "14px 16px" }}>
-            <Label>ACHIEVEMENTS · UNLOCKED</Label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+          <Box style={{ padding: "12px 16px" }}>
+            <Label>Achievements · unlocked</Label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px", marginTop: "9px" }}>
               <a
                 href="https://devpost.com/software/preventia-sblncy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="badge"
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: C.copper, borderRadius: "999px", padding: "6px 11px", fontSize: "6px", color: C.dark, letterSpacing: "0.05em", textDecoration: "none" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
+                  borderRadius: "999px",
+                  padding: "8px 14px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#1a0605",
+                  letterSpacing: "0.02em",
+                  textDecoration: "none",
+                }}
               >
-                🏆 BEST USE OF GEMINI AI · HACKAUGIE
+                🏆 Best Use of Gemini AI · HackAugie
               </a>
-              {[
-                "1K+ CALLS / WEEK",
-                "+25% ENGAGEMENT",
-                "200+ MENTORED",
-                "−15% FAILURE RATE",
-                "40% FASTER LOGGING",
-              ].map((b) => (
-                <span key={b} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: "6px", border: `1px solid ${C.border}`, borderRadius: "999px", padding: "6px 10px", fontSize: "6px", color: C.mid, letterSpacing: "0.05em" }}>
-                  <span style={{ color: C.copper }}>✦</span>{b}
+              {WINS.map((win) => (
+                <span
+                  key={win}
+                  className="badge"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    border: `1px solid ${C.border}`,
+                    background: C.panel,
+                    borderRadius: "999px",
+                    padding: "8px 13px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: C.moss,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  <span style={{ color: C.leaf }}>✦</span>
+                  {win}
                 </span>
               ))}
             </div>
           </Box>
         </Reveal>
 
-        {/* ROW 3 — packed collage (left) + beliefs/contact (right) */}
+        {/* ── row 3: skill chips (left) + contact (right) ── */}
         <Reveal style={{ marginBottom: GAP }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
-          <Box style={{ padding: "14px 16px 16px" }}>
-            <Label>IN THE STACK</Label>
-            <div style={{ position: "relative", height: "460px", marginTop: "8px" }}>
-              {tiles.map((t) => (
-                <div
-                  key={t.label}
-                  className="tile"
-                  title={t.label}
-                  style={{
-                    position: "absolute", top: `${t.top}px`, left: t.left,
-                    width: `${t.w}px`, height: `${t.h}px`, zIndex: t.z,
-                    transform: `rotate(${t.rot}deg)`, background: t.grad,
-                    border: `1px solid ${C.border}`, borderRadius: "6px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 5px 14px rgba(92,61,32,0.16)",
-                  }}
-                >
-                  <span style={{ fontSize: "5px", color: "rgba(92,61,32,0.55)", letterSpacing: "0.1em" }}>{t.label}</span>
-                </div>
-              ))}
-            </div>
-          </Box>
-
-          <div style={{ display: "grid", gridTemplateRows: "1fr auto", gap: GAP }}>
-            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", minHeight: "150px" }}>
-              <div style={{ fontSize: "9px", color: C.dark, lineHeight: 2, letterSpacing: "0.04em" }}>small steps,<br />big outcomes</div>
-              <div style={{ marginTop: "12px", fontSize: "7px", color: C.copper, opacity: 0.6 }}>✦ ✦ ✦</div>
-            </Box>
-            <Box dark style={{ minHeight: "150px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ fontSize: "8px", color: C.cream, lineHeight: 1.9, letterSpacing: "0.03em" }}>DON&apos;T BE SHY,<br />HIT ME UP</div>
-              <a href="mailto:summerpandey23@augustana.edu" style={{ marginTop: "10px", fontSize: "5px", color: C.copper, opacity: 0.9, textDecoration: "none" }}>summerpandey23@augustana.edu</a>
-            </Box>
-          </div>
-        </div>
-        </Reveal>
-
-        {/* ROW 4 — profile (wide) + quote */}
-        <Reveal style={{ marginBottom: GAP }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: GAP }}>
-          <Box style={{ padding: 0, minHeight: "230px", display: "flex" }}>
-            <div style={{ flex: 1, background: "linear-gradient(160deg,#D4C4A8,#B8A080)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: "7px", color: "rgba(92,61,32,0.4)", letterSpacing: "0.16em" }}>SUMMER PANDEY</span>
-            </div>
-          </Box>
-          <Box dark style={{ minHeight: "230px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-            <div>
-              <div style={{ fontSize: "9px", color: C.cream, lineHeight: 2.1, letterSpacing: "0.05em", opacity: 0.92 }}>
-                &quot;BUILD THINGS,<br />SHIP THINGS,<br />LEARN FAST.&quot;
+          <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
+            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <Label>In the stack</Label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+                {SKILLS.map((skill) => (
+                  <span
+                    key={skill}
+                    className="badge chip"
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: C.bark,
+                      border: `1px solid ${C.border}`,
+                      background: "rgba(226,72,58,0.1)",
+                      borderRadius: "999px",
+                      padding: "6px 13px",
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    {skill}
+                  </span>
+                ))}
               </div>
-              <div style={{ marginTop: "12px", fontSize: "7px", color: C.copper, opacity: 0.6 }}>CS + DATA SCIENCE @ AUGUSTANA</div>
+            </Box>
+
+            <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ fontSize: "15px", fontWeight: 700, color: C.cream, lineHeight: 1.6, letterSpacing: "0.01em" }}>
+                Don&apos;t be shy,
+                <br />
+                hit me up ✧
+              </div>
+              <a
+                href="mailto:summerpandey23@augustana.edu"
+                className="link-glow"
+                style={{ marginTop: "10px", fontSize: "12px", fontWeight: 600, color: C.sun, opacity: 0.95, textDecoration: "none" }}
+              >
+                summerpandey23@augustana.edu
+              </a>
+            </Box>
+          </div>
+        </Reveal>
+
+        {/* ── footer: sign-off + social links ── */}
+        <Reveal>
+          <Box dark flat style={{ padding: "16px 26px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+              <div
+                className="serif"
+                style={{
+                  fontFamily: SERIF,
+                  fontWeight: 600,
+                  fontSize: "clamp(18px, 2vw, 26px)",
+                  color: C.cream,
+                  lineHeight: 1.35,
+                  letterSpacing: "0.01em",
+                }}
+              >
+                Let&apos;s grow cool
+                <br />
+                <span style={{ color: C.sun }}>proud</span>-ucts together
+              </div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                {SOCIALS.map(({ Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="icon-btn"
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      border: "1px solid rgba(255,255,255,0.16)",
+                      background: "rgba(255,255,255,0.04)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon size={15} color={C.sun} />
+                  </a>
+                ))}
+              </div>
             </div>
           </Box>
-        </div>
         </Reveal>
-
-        {/* FOOTER — packed dark bar */}
-        <Reveal>
-        <Box dark flat style={{ padding: "18px 22px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
-            <div style={{ fontSize: "clamp(9px,1.6vw,13px)", color: C.cream, lineHeight: 1.8, letterSpacing: "0.03em" }}>
-              LET&apos;S BUILD COOL<br /><span style={{ color: C.copper }}>PROUD</span>-UCTS TOGETHER
-            </div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              {[
-                { Icon: Linkedin, href: "https://www.linkedin.com/", label: "LinkedIn" },
-                { Icon: Github, href: "https://github.com/SummerPandey", label: "GitHub" },
-                { Icon: FileText, href: "/Summer_Pandey_Resume.pdf", label: "Resume" },
-              ].map(({ Icon, href, label }) => (
-                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                  style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.13)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon size={12} color={C.copper} />
-                </a>
-              ))}
-            </div>
-          </div>
-        </Box>
-        </Reveal>
-
       </div>
     </div>
   );

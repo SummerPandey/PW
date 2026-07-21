@@ -35,3 +35,6 @@ next-env.d.ts
 
 # drizzle
 /drizzle
+
+# local Claude Code config
+/.claude/
