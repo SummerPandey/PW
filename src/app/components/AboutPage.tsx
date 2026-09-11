@@ -121,7 +121,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
               padding: "20px 26px",
             }}
           >
-            {/* sun-glow + swaying sprout, plus a placeholder monogram avatar */}
+            {/* sun-glow + swaying sprout, plus a headshot avatar */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div
@@ -138,29 +138,21 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   <Sprout size={26} />
                 </span>
               </div>
-              {/* placeholder avatar — swap for a real headshot later */}
-              <div
-                aria-label="Photo placeholder — swap for a headshot"
-                title="Placeholder — swap for a headshot"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/headshot.jpg"
+                alt="Summer Pandey"
+                width={52}
+                height={52}
                 style={{
                   width: "52px",
                   height: "52px",
                   borderRadius: "50%",
-                  background: "linear-gradient(150deg, #e2483a, #7a1e14)",
-                  border: "1.5px dashed rgba(255,220,210,0.4)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: SERIF,
-                  fontWeight: 600,
-                  fontSize: "18px",
-                  color: C.cream,
-                  letterSpacing: "0.02em",
+                  objectFit: "cover",
+                  border: "1.5px solid rgba(255,220,210,0.4)",
                   flexShrink: 0,
                 }}
-              >
-                SP
-              </div>
+              />
             </div>
 
             <div>

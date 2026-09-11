@@ -127,8 +127,12 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
             background: "linear-gradient(180deg, rgba(255,210,63,0.08), transparent)",
           }}
         >
-          <span style={{ fontSize: "13px", fontWeight: 700, color: C.dark, letterSpacing: "0.01em" }}>
-            Summer&apos;s coding duck
+          <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/duck-pixel.png" alt="" width={20} height={20} style={{ imageRendering: "pixelated" }} />
+            <span style={{ fontSize: "13px", fontWeight: 700, color: C.dark, letterSpacing: "0.01em" }}>
+              Summer&apos;s coding duck
+            </span>
           </span>
           <button
             onClick={onClose}

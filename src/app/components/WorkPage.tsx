@@ -55,6 +55,7 @@ type Project = {
   award?: string;
   desc: string;
   grad: string; // banner gradient
+  photo?: string; // optional banner photo, shown under the gradient wash
   tags: { label: string; tone: keyof typeof TAG_COLOR }[];
   link: string;
   linkIcon: "github" | "devpost" | "resume";
@@ -66,7 +67,8 @@ const PROJECTS: Project[] = [
     title: "Argus",
     icon: ShieldCheck,
     desc: "A privacy-by-design operating-room CV system: all video processed on an NVIDIA Jetson, connected to a serverless AWS backend, so medical footage never leaves the device. Detects 4 safety events with human-in-the-loop review.",
-    grad: "linear-gradient(150deg, #4a7a5c, #14361f)",
+    grad: "linear-gradient(150deg, rgba(20,54,31,0.55), rgba(10,20,14,0.85))",
+    photo: "/images/jetson-device.jpg",
     tags: [
       { label: "python", tone: "leaf" },
       { label: "aws", tone: "sun" },
@@ -109,7 +111,8 @@ const PROJECTS: Project[] = [
     icon: Stethoscope,
     award: "Best Use of Gemini AI",
     desc: "Won Best Use of Gemini AI at HackAugie — a Flutter app that generates personalized preventive-health checklists from demographic and regional risk factors, with Firebase-powered gamified tracking and leaderboards.",
-    grad: "linear-gradient(150deg, #b23a3a, #6b1f1f)",
+    grad: "linear-gradient(150deg, rgba(107,31,31,0.6), rgba(30,8,8,0.88))",
+    photo: "/images/team-photo-2.jpg",
     tags: [
       { label: "flutter", tone: "teal" },
       { label: "firebase", tone: "sun" },
@@ -257,13 +260,15 @@ function ProjectCard({ p }: { p: Project }) {
         boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
       }}
     >
-      {/* banner: gradient backdrop, sigil mark, award ribbon, link button */}
+      {/* banner: photo (if any) + gradient wash, sigil mark, award ribbon, link button */}
       <div
         style={{
           position: "relative",
           height: "172px",
           borderRadius: "16px",
-          background: p.grad,
+          background: p.photo
+            ? `${p.grad}, url(${p.photo}) center/cover no-repeat`
+            : p.grad,
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
