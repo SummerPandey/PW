@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Summer Pandey — Portfolio",
+  title: "Summer Pandey | Software Engineer & AI/ML Builder",
   description:
-    "Summer Pandey — CS & Data Science @ Augustana College. Software engineer, data scientist, ML/AI developer.",
+    "Summer Pandey builds reliable, human-centered software and AI products across edge computer vision, voice automation, and personal health.",
 };
 
 export default function RootLayout({

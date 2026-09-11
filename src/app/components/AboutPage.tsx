@@ -75,24 +75,24 @@ function Box({
 
 /* ── content ───────────────────────────────────────────────────────── */
 
-const ROLES = ["Software Engineer", "Data Scientist", "ML · AI Developer"];
+const ROLES = ["Software Engineer", "AI/ML Engineer", "Data Scientist"];
 
-const MOTTOS = ["Try things, see what happens", "Push ideas forward", "Just give it a shot"];
+const MOTTOS = ["Build for real people", "Test on real systems", "Improve with evidence"];
 
 // Compact skill set — shown as chips so the whole page fits one screen.
 const SKILLS = [
-  "Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart",
-  "React", "Node.js", "Express.js", "Flutter",
-  "AWS", "PostgreSQL", "Supabase", "Firebase", "MongoDB",
-  "Docker", "Kubernetes", "Git",
-  "PyTorch", "TensorFlow", "scikit-learn", "NVIDIA Jetson", "Gemini API",
+  "Python", "TypeScript", "JavaScript", "SQL", "Dart",
+  "React", "Flutter", "Node.js",
+  "PostgreSQL", "Supabase", "Firebase", "Vercel",
+  "Git/GitHub", "REST APIs", "Twilio Voice", "Gemini API",
+  "Computer Vision", "NVIDIA Jetson", "PyTorch", "scikit-learn", "Hugging Face", "pandas",
 ];
 
 // Gamified résumé metrics (the trophy badge is rendered separately).
 const WINS = [
-  "1K+ calls / week",
+  "1,000+ calls automated/week",
   "+25% call completion",
-  "−15% system failures",
+  "15% fewer service failures",
   "200+ students mentored",
   "50+ students taught",
 ];
@@ -156,22 +156,26 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             </div>
 
             <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(243,222,210,0.55)" }}>
+                Summer Pandey · Software Engineer
+              </div>
               <div
                 className="serif"
                 style={{
                   fontFamily: SERIF,
                   fontWeight: 600,
-                  fontSize: "clamp(24px, 2.6vw, 34px)",
+                  fontSize: "clamp(22px, 2.4vw, 32px)",
                   color: C.cream,
-                  lineHeight: 1.05,
+                  lineHeight: 1.1,
                   letterSpacing: "0.005em",
                   minHeight: "72px",
+                  marginTop: "6px",
                 }}
               >
-                <Typewriter text={"Building\ndata-driven\nsoftware"} style={{ color: C.cream }} />
+                <Typewriter text={"Building reliable\nAI for the\nreal world"} style={{ color: C.cream }} />
               </div>
-              <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.04em" }}>
-                one project at a time 🎞️
+              <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.02em" }}>
+                From edge computer vision to production voice systems.
               </div>
               <button
                 className="btn-bounce"
@@ -193,7 +197,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   letterSpacing: "0.04em",
                 }}
               >
-                See my work <ArrowUpRight size={15} color="#1a0605" strokeWidth={2.5} />
+                Explore my work <ArrowUpRight size={15} color="#1a0605" strokeWidth={2.5} />
               </button>
             </div>
           </Box>
@@ -236,6 +240,17 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
           </div>
         </div>
 
+        {/* ── about text ── */}
+        <Reveal style={{ marginBottom: GAP }}>
+          <Box style={{ padding: "14px 18px" }}>
+            <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.65, color: C.moss, margin: 0 }}>
+              I&apos;m Summer Pandey, a Computer Science and Data Science student at Augustana College. I build
+              human-centered AI products across edge computer vision, voice automation, and personal health. I care
+              about privacy, reliability, and turning complex technology into tools people can actually use.
+            </p>
+          </Box>
+        </Reveal>
+
         {/* ── row 2: three showcases, all leading to Works ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
           <Box
@@ -247,9 +262,13 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             <Label dark>Tech works</Label>
             <div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "9px" }}>
-                {["PREVENTIA", "MMM"].map((name) => (
-                  <div
+                {["ARGUS", "VENTUREGAIN"].map((name) => (
+                  <button
                     key={name}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goTo("works");
+                    }}
                     style={{
                       flex: 1,
                       height: "38px",
@@ -259,16 +278,18 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      cursor: "pointer",
+                      fontFamily: FONT,
                     }}
                   >
                     <span style={{ fontSize: "11px", fontWeight: 700, color: C.sun, opacity: 0.85, letterSpacing: "0.08em" }}>
                       {name}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
               <div style={{ fontSize: "13px", fontWeight: 600, color: C.cream, letterSpacing: "0.01em", lineHeight: 1.45 }}>
-                What I&apos;ve built with data &amp; code
+                Privacy-first AI, edge vision, and full-stack products.
               </div>
             </div>
           </Box>
@@ -286,8 +307,20 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 borderRadius: "12px",
                 background: "linear-gradient(160deg, #9a5a52, #4a2018)",
                 minHeight: "40px",
+                padding: "8px 10px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: "4px",
               }}
-            />
+            >
+              <div style={{ fontSize: "11px", fontWeight: 700, color: C.cream, lineHeight: 1.35 }}>
+                Sports Media Inc. <span style={{ fontWeight: 500, opacity: 0.85 }}>· Software Engineering Intern</span>
+              </div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: C.cream, lineHeight: 1.35 }}>
+                iD Tech <span style={{ fontWeight: 500, opacity: 0.85 }}>· NVIDIA AI &amp; Machine Learning Instructor</span>
+              </div>
+            </div>
             <div style={{ fontSize: "14px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>2 roles</div>
           </Box>
 
@@ -304,9 +337,33 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 borderRadius: "12px",
                 background: "linear-gradient(135deg, #d9895a, #a34a1e)",
                 minHeight: "40px",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "8px",
               }}
-            />
-            <div style={{ fontSize: "14px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>3 side builds</div>
+            >
+              {["Argus", "VentureGain", "Preventia"].map((name) => (
+                <span
+                  key={name}
+                  style={{
+                    fontSize: "9.5px",
+                    fontWeight: 700,
+                    color: "#2a0e0e",
+                    background: "rgba(255,255,255,0.28)",
+                    borderRadius: "999px",
+                    padding: "3px 7px",
+                    letterSpacing: "0.01em",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>3 products across edge AI, health, and data</div>
           </Box>
         </div>
 
@@ -392,9 +449,10 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
 
             <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ fontSize: "15px", fontWeight: 700, color: C.cream, lineHeight: 1.6, letterSpacing: "0.01em" }}>
-                Don&apos;t be shy,
-                <br />
-                hit me up ✧
+                Have a problem worth building for?
+              </div>
+              <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 500, color: C.moss, lineHeight: 1.55 }}>
+                I&apos;m open to software engineering, AI/ML, and product-focused opportunities.
               </div>
               <a
                 href="mailto:summerpandey23@augustana.edu"
@@ -422,9 +480,9 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   letterSpacing: "0.01em",
                 }}
               >
-                Let&apos;s grow cool
+                Let&apos;s build something
                 <br />
-                <span style={{ color: C.sun }}>proud</span>-ucts together
+                <span style={{ color: C.sun }}>useful</span>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 {SOCIALS.map(({ Icon, href, label }) => (

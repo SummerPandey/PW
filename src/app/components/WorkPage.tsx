@@ -532,7 +532,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
               className="serif"
               style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(18px, 2vw, 26px)", color: C.cream, lineHeight: 1.35 }}
             >
-              Let&apos;s grow cool <span style={{ color: C.sun }}>proud</span>-ucts together ✦
+              Let&apos;s build something <span style={{ color: C.sun }}>useful</span> ✦
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
