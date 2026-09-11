@@ -13,7 +13,7 @@ type Message = { role: "user" | "duck"; text: string };
 
 const GREETING: Message = {
   role: "duck",
-  text: "quack — I'm Summer's coding duck. Ask me about her projects, skills, or experience.",
+  text: "quack — me Summer's duck. Ask about his projects, skills, work.",
 };
 
 export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void }) {
