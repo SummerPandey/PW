@@ -40,11 +40,6 @@ export function Sprout({ size = 22, className }: { size?: number; className?: st
    and it flips cute and yellow, ready to chat. A résumé tag sits by
    its feet. ── */
 
-const DUCK_PALETTE = {
-  dark: { body: "#0a0403", accent: "#3a1c16", eyeRing: "none" },
-  awake: { body: "#ffd23f", accent: "#f5a623", eyeRing: "#fff" },
-};
-
 export function CodingDuck({
   p,
   awake = false,
@@ -65,9 +60,6 @@ export function CodingDuck({
   const tagFade = clamp01((g - 0.32) / 0.15);
   const hintFade = awake ? 0 : clamp01((g - 0.55) / 0.2);
 
-  const mood = awake ? DUCK_PALETTE.awake : DUCK_PALETTE.dark;
-  const fillT = "fill 0.35s ease";
-
   return (
     <svg viewBox="0 0 300 340" className={className} width="100%" style={{ display: "block", overflow: "visible" }}>
       {/* ground shadow, settles in as the duck lands */}
@@ -87,63 +79,8 @@ export function CodingDuck({
           onClick={onActivate}
           style={{ cursor: onActivate ? "pointer" : "default", pointerEvents: pop > 0.5 ? "auto" : "none" }}
         >
-          {/* the classic rubber-duck silhouette: a rounded body with an
-              integrated tail bump, a raised head, and a forward bill —
-              built from one continuous outline so it reads as a single
-              clean shape, the way a vector duck icon does. */}
-          <path
-            d="M45 206
-               Q50 178 78 172
-               Q76 150 96 138
-               Q120 126 146 138
-               Q168 150 172 174
-               Q198 162 220 176
-               Q238 188 234 208
-               Q230 224 210 222
-               Q222 240 218 260
-               Q214 288 182 298
-               Q150 306 118 300
-               Q84 294 64 270
-               Q48 250 45 206 Z"
-            fill={mood.body}
-            stroke={mood.accent}
-            strokeWidth={3}
-            strokeLinejoin="round"
-            style={{ transition: fillT }}
-          />
-
-          {/* open bill, a hair darker than the body */}
-          <path
-            d="M45 206 Q50 178 78 172 Q86 186 82 200 Q76 214 58 216 Q48 214 45 206 Z"
-            fill={mood.accent}
-            style={{ transition: fillT }}
-          />
-          <path d="M53 197 Q66 203 79 198" stroke={mood.body} strokeWidth={2} fill="none" strokeLinecap="round" style={{ transition: fillT }} />
-
-          {/* the one eye a side-profile duck gets */}
-          {awake ? (
-            <g>
-              <circle cx={100} cy={162} r={10} fill="#1a1002" />
-              <circle cx={103} cy={158} r={3} fill="#fff" />
-              <ellipse cx={82} cy={176} rx={9} ry={5.5} fill="#ff8a65" opacity={0.5} />
-            </g>
-          ) : (
-            <g style={{ animation: "sun-pulse 2.4s ease-in-out infinite" }}>
-              <circle cx={100} cy={162} r={8} fill="#ff3b2b" />
-            </g>
-          )}
-
-          {/* feet, peeking out from underneath */}
-          <ellipse cx={110} cy={298} rx={10} ry={5.5} fill={mood.accent} style={{ transition: fillT }} />
-          <ellipse cx={190} cy={298} rx={10} ry={5.5} fill={mood.accent} style={{ transition: fillT }} />
-
-          {/* laptop, tucked under the chin — drawn last so its glow reads over the belly */}
-          <path d="M68 300 L184 300 L194 308 L58 308 Z" fill={mood.accent} style={{ transition: fillT }} />
-          <rect x={80} y={250} width={92} height={58} rx={4} fill="#0d0605" stroke={mood.accent} strokeWidth={2} style={{ transition: fillT }} />
-          <rect x={86} y={256} width={80} height={46} rx={2} fill="#3a1010" />
-          <rect x={93} y={265} width={44} height={3} rx={1.5} fill="#e2483a" opacity={0.85} />
-          <rect x={93} y={274} width={58} height={3} rx={1.5} fill="#8a4a4a" opacity={0.75} />
-          <rect x={93} y={283} width={32} height={3} rx={1.5} fill="#e2483a" opacity={0.65} />
+          {/* the real duck — pixel art, standing in for the old hand-drawn silhouette */}
+          <image href="/images/duck-pixel.png" x={45} y={106} width={190} height={200} style={{ imageRendering: "pixelated" }} />
         </g>
       </g>
 
@@ -198,25 +135,18 @@ export function CodingDuck({
 
 export function DuckPeek({ size = 68, className }: { size?: number; className?: string }) {
   return (
-    <svg
-      viewBox="0 0 120 120"
-      width={size}
-      height={size}
-      className={className}
-      style={{ display: "block", overflow: "visible" }}
-    >
-      <g className="bob">
-        {/* head, same profile silhouette as the big duck, just cropped to the head */}
-        <circle cx={64} cy={62} r={42} fill="#ffd23f" stroke="#f5a623" strokeWidth={2.5} />
-        {/* bill, pointing out to the side */}
-        <path d="M14 68 Q20 44 46 40 Q54 54 50 68 Q44 82 26 84 Q16 82 14 68 Z" fill="#f5a623" />
-        <path d="M22 60 Q34 66 46 61" stroke="#ffd23f" strokeWidth={2} fill="none" strokeLinecap="round" />
-        {/* the one eye */}
-        <circle cx={68} cy={48} r={9} fill="#1a1002" />
-        <circle cx={71.5} cy={44} r={2.8} fill="#fff" />
-        <ellipse cx={50} cy={62} rx={8} ry={5} fill="#ff8a65" opacity={0.5} />
-      </g>
-    </svg>
+    <div className={className} style={{ display: "block", width: size, height: size }}>
+      <div className="bob">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/duck-pixel.png"
+          alt=""
+          width={size}
+          height={size}
+          style={{ display: "block", width: size, height: size, imageRendering: "pixelated" }}
+        />
+      </div>
+    </div>
   );
 }
 
