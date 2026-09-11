@@ -1,64 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Github,
   ArrowUpRight,
-  FileText,
   Activity,
-  Dumbbell,
   Stethoscope,
-  Aperture,
   Coins,
   Navigation,
-  BarChart3,
-  Cast,
-  CircleDot,
-  TrendingUp,
   Trophy,
   ShieldCheck,
+  RotateCcw,
   type LucideIcon,
 } from "lucide-react";
 import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
 import { Reveal } from "./fx";
 
 /* ────────────────────────────────────────────────────────────────────
-   WorkPage — the project garden: filterable project cards, a compact
-   résumé strip (experience / education / toolbox), and a footer CTA.
+   WorkPage — the project garden: flippable project cards (front =
+   quick summary, back = case-study detail), a compact résumé strip
+   (experience / education / toolbox), and a footer CTA.
    ──────────────────────────────────────────────────────────────────── */
 
 /* ── project data ──────────────────────────────────────────────────── */
 
-// Hashtag tag colors, keyed by tone.
-const TAG_COLOR = {
-  leaf: C.leaf,
-  teal: C.teal,
-  sun: "#c9702e",
-  wood: C.wood,
-} as const;
+// Hashtag/tag colors, cycled by index.
+const TAG_COLORS = [C.leaf, C.wood, "#c9702e", C.teal] as const;
 
-type Category =
-  | "AI/ML"
-  | "Backend"
-  | "Frontend"
-  | "UI/UX"
-  | "Design"
-  | "Branding"
-  | "Illustration"
-  | "Blogs";
-
+type Category = "AI/ML" | "Backend" | "Frontend" | "NLP" | "Robotics";
 type Filter = "All Projects" | Category;
+type Status = "Prototype" | "Live" | "Award Winner" | "In Development";
+
+type BackSection = { label: string; text: string };
 
 type Project = {
   title: string;
   icon: LucideIcon;
-  award?: string;
-  desc: string;
+  status: Status;
+  desc: string; // front-facing description
   grad: string; // banner gradient
   photo?: string; // optional banner photo, shown under the gradient wash
-  tags: { label: string; tone: keyof typeof TAG_COLOR }[];
-  link: string;
-  linkIcon: "github" | "devpost" | "resume";
+  tags: string[]; // 3-5 tech tags, shown on the front
+  ghUrl?: string; // omitted when no confirmed/public repo exists
+  demoUrl?: string; // omitted when nothing is actually deployed
+  devpostUrl?: string; // omitted when no writeup exists
+  back: {
+    sections: BackSection[];
+    tech: string;
+  };
   cats: Category[];
 };
 
@@ -66,165 +55,169 @@ const PROJECTS: Project[] = [
   {
     title: "Argus",
     icon: ShieldCheck,
-    desc: "A privacy-by-design operating-room CV system: all video processed on an NVIDIA Jetson, connected to a serverless AWS backend, so medical footage never leaves the device. Detects 4 safety events with human-in-the-loop review.",
+    status: "In Development",
+    desc: "Privacy-first edge AI for monitoring operating-room safety without sending sensitive video to the cloud.",
     grad: "linear-gradient(150deg, rgba(20,54,31,0.55), rgba(10,20,14,0.85))",
     photo: "/images/jetson-device.jpg",
-    tags: [
-      { label: "python", tone: "leaf" },
-      { label: "aws", tone: "sun" },
-      { label: "jetson", tone: "teal" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
+    tags: ["python", "computer-vision", "jetson", "gemini-ai"],
+    ghUrl: "https://github.com/SummerPandey/Argus_0.1",
+    back: {
+      sections: [
+        {
+          label: "Problem",
+          text: "Operating-room safety procedures must be monitored consistently, but uploading medical footage to external servers introduces serious privacy concerns.",
+        },
+        {
+          label: "What I built",
+          text: "I prototyped a computer-vision system that processes video locally on an NVIDIA Jetson. It monitors four safety workflows: hand hygiene, instrument counts, zone tracking, and sterile-field alerts.",
+        },
+        {
+          label: "Engineering approach",
+          text: "I combined AI detection with deterministic safety rules and a human-in-the-loop review step so uncertain events are reviewed before being reported.",
+        },
+        {
+          label: "Outcome",
+          text: "The prototype demonstrates how hospitals could automate safety monitoring while keeping sensitive footage on the local device.",
+        },
+      ],
+      tech: "Python · NVIDIA Jetson · Computer Vision · Gemini AI",
+    },
     cats: ["AI/ML", "Backend"],
   },
   {
     title: "VentureGain",
     icon: Activity,
-    desc: "A full-stack health-tracking dashboard used by 20+ users — workouts, nutrition, sleep, energy & hydration in one place, with photo/voice/text logging normalized into a PostgreSQL/JSONB schema with per-user row-level security.",
+    status: "Live",
+    desc: "An AI-assisted health and workout tracker that turns photo, voice, and text logs into structured daily records.",
     grad: "linear-gradient(150deg, #c0453a, #5c1414)",
-    tags: [
-      { label: "react", tone: "leaf" },
-      { label: "typescript", tone: "wood" },
-      { label: "supabase", tone: "teal" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["Frontend", "UI/UX"],
-  },
-  {
-    title: "Wlog",
-    icon: Dumbbell,
-    desc: "A Google Chrome extension to log workouts from plain language — cut manual entry 40%, 200+ entries stored.",
-    grad: "linear-gradient(150deg, #d97a4d, #8a3a1e)",
-    tags: [
-      { label: "chrome", tone: "teal" },
-      { label: "openai", tone: "leaf" },
-      { label: "nodejs", tone: "sun" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["AI/ML"],
+    tags: ["typescript", "react", "supabase", "postgresql", "ai"],
+    ghUrl: "https://github.com/SummerPandey/Venture_Gain",
+    demoUrl: "https://venture-gain.vercel.app",
+    back: {
+      sections: [
+        {
+          label: "Problem",
+          text: "Health tracking becomes difficult to maintain when users must manually format every workout, meal, or wellness entry.",
+        },
+        {
+          label: "What I built",
+          text: "I built a progressive web app that accepts photo, voice, and text input. AI extraction and TypeScript validation transform all three input formats into consistent health records.",
+        },
+        {
+          label: "Engineering approach",
+          text: "I created a React dashboard that combines health and workout metrics into one daily view. I also designed a PostgreSQL schema supporting five record types and used Supabase row-level security to isolate each user's data.",
+        },
+        {
+          label: "Outcome",
+          text: "VentureGain supported more than 20 active users while making daily logging faster and more flexible.",
+        },
+      ],
+      tech: "TypeScript · React · Supabase · PostgreSQL · Vercel",
+    },
+    cats: ["Frontend", "AI/ML"],
   },
   {
     title: "Preventia",
     icon: Stethoscope,
-    award: "Best Use of Gemini AI",
-    desc: "Won Best Use of Gemini AI at HackAugie — a Flutter app that generates personalized preventive-health checklists from demographic and regional risk factors, with Firebase-powered gamified tracking and leaderboards.",
+    status: "Award Winner",
+    desc: "A Gemini-powered preventive-health app that creates personalized health checklists from demographic and regional risk factors.",
     grad: "linear-gradient(150deg, rgba(107,31,31,0.6), rgba(30,8,8,0.88))",
     photo: "/images/team-photo-2.jpg",
-    tags: [
-      { label: "flutter", tone: "teal" },
-      { label: "firebase", tone: "sun" },
-      { label: "geminiai", tone: "leaf" },
-    ],
-    link: "https://devpost.com/software/preventia-sblncy",
-    linkIcon: "devpost",
+    tags: ["flutter", "firebase", "gemini-ai", "health-tech"],
+    devpostUrl: "https://devpost.com/software/preventia-sblncy",
+    back: {
+      sections: [
+        {
+          label: "Problem",
+          text: "Generic health recommendations often fail to account for a person's demographic background, location, and individual risk factors.",
+        },
+        {
+          label: "What I built",
+          text: "I developed a Flutter application that uses Gemini AI to generate personalized preventive-health checklists based on demographic and regional information.",
+        },
+        {
+          label: "Product design",
+          text: "I added Firebase-powered progress tracking, gamification, and leaderboards to encourage users to complete preventive-health actions consistently.",
+        },
+        {
+          label: "Outcome",
+          text: "Preventia won Best Use of Gemini AI at HackAugie.",
+        },
+      ],
+      tech: "Flutter · Firebase · Gemini AI",
+    },
     cats: ["AI/ML"],
-  },
-  {
-    title: "Portfolio Website",
-    icon: Aperture,
-    desc: "The site you're looking at right now — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
-    grad: "linear-gradient(150deg, #8a4a4a, #3a1616)",
-    tags: [
-      { label: "nextjs", tone: "leaf" },
-      { label: "react", tone: "teal" },
-      { label: "typescript", tone: "wood" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["Design", "Branding"],
   },
   {
     title: "Crypto Sentiment Analyzer",
     icon: Coins,
-    desc: "A Python pipeline that scores crypto news & social sentiment with RoBERTa and VADER — 72% accuracy against labeled data.",
+    status: "Prototype",
+    desc: "A machine-learning pipeline that scores sentiment in cryptocurrency news and social-media discussions.",
     grad: "linear-gradient(150deg, #d9895a, #a34a1e)",
-    tags: [
-      { label: "python", tone: "leaf" },
-      { label: "roberta", tone: "sun" },
-      { label: "vader", tone: "teal" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["AI/ML", "Backend"],
+    tags: ["python", "roberta", "vader", "nlp"],
+    back: {
+      sections: [
+        {
+          label: "Problem",
+          text: "Cryptocurrency discussions move quickly across news and social platforms, making overall market sentiment difficult to evaluate manually.",
+        },
+        {
+          label: "What I built",
+          text: "I developed a Python pipeline that processes cryptocurrency text and combines RoBERTa-based language understanding with VADER sentiment scoring.",
+        },
+        {
+          label: "Evaluation",
+          text: "The model achieved 72% accuracy when evaluated against labeled sentiment data.",
+        },
+        {
+          label: "Outcome",
+          text: "The project converts large amounts of unstructured crypto discussion into sentiment signals that can be analyzed more efficiently.",
+        },
+      ],
+      tech: "Python · RoBERTa · VADER · Natural Language Processing",
+    },
+    cats: ["AI/ML", "NLP"],
   },
   {
     title: "Pi Car",
     icon: Navigation,
-    desc: "A robotics car that drives on its own — real-time lane detection for autonomous navigation on a Raspberry Pi.",
+    status: "Prototype",
+    desc: "A Raspberry Pi robotics car that uses real-time lane detection for autonomous navigation.",
     grad: "linear-gradient(150deg, #9a5a52, #4a2018)",
-    tags: [
-      { label: "python", tone: "leaf" },
-      { label: "opencv", tone: "teal" },
-      { label: "raspberrypi", tone: "wood" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["AI/ML"],
-  },
-  {
-    title: "Data Project",
-    icon: BarChart3,
-    desc: "Twitter sentiment analysis — cleaning, modeling and visualizing public sentiment from tweet data.",
-    grad: "linear-gradient(150deg, #c96a4a, #7a2e1e)",
-    tags: [
-      { label: "python", tone: "leaf" },
-      { label: "nlp", tone: "teal" },
-      { label: "datascience", tone: "wood" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["Illustration", "Blogs"],
-  },
-  {
-    title: "CS SI · AuraTV",
-    icon: Cast,
-    desc: "AuraTV — a streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
-    grad: "linear-gradient(150deg, #8a3230, #2a0e0e)",
-    tags: [
-      { label: "flutter", tone: "sun" },
-      { label: "firebase", tone: "wood" },
-      { label: "youtubeapi", tone: "teal" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["Frontend"],
-  },
-  {
-    title: "Volleyball Organizer",
-    icon: CircleDot,
-    desc: "A volleyball tournament organizer — building brackets, scheduling matches and tracking results.",
-    grad: "linear-gradient(150deg, #d16a4a, #8a3018)",
-    tags: [
-      { label: "app", tone: "leaf" },
-      { label: "scheduling", tone: "teal" },
-    ],
-    link: "https://github.com/SummerPandey",
-    linkIcon: "github",
-    cats: ["Branding"],
-  },
-  {
-    title: "MMM",
-    icon: TrendingUp,
-    desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes, with SQL & Python and channel-ROI reporting.",
-    grad: "linear-gradient(150deg, #b04a3a, #5a1e14)",
-    tags: [
-      { label: "python", tone: "leaf" },
-      { label: "sql", tone: "teal" },
-      { label: "marketing", tone: "wood" },
-    ],
-    link: "/Summer_Pandey_Resume.pdf",
-    linkIcon: "resume",
-    cats: ["Illustration", "Blogs"],
+    tags: ["python", "opencv", "raspberry-pi", "robotics"],
+    back: {
+      sections: [
+        {
+          label: "Problem",
+          text: "An autonomous vehicle must interpret visual road information and make navigation decisions with limited on-device computing power.",
+        },
+        {
+          label: "What I built",
+          text: "I created a Raspberry Pi-powered robotic car that analyzes camera input and performs real-time lane detection for autonomous navigation.",
+        },
+        {
+          label: "Engineering focus",
+          text: "The project focused on connecting computer-vision output to physical steering behavior while operating within the Raspberry Pi's hardware constraints.",
+        },
+        {
+          label: "Outcome",
+          text: "The completed prototype demonstrated on-device visual perception and autonomous lane-following behavior.",
+        },
+      ],
+      tech: "Python · OpenCV · Raspberry Pi · Computer Vision",
+    },
+    cats: ["AI/ML", "Robotics"],
   },
 ];
 
-const TABS: Filter[] = [
-  "All Projects", "AI/ML", "Backend", "Frontend", "UI/UX",
-  "Design", "Branding", "Illustration", "Blogs",
-];
+const TABS: Filter[] = ["All Projects", "AI/ML", "Backend", "Frontend", "NLP", "Robotics"];
+
+const STATUS_STYLE: Record<Status, { bg: string; color: string }> = {
+  Prototype: { bg: "rgba(255,255,255,0.14)", color: C.cream },
+  Live: { bg: "rgba(90,200,120,0.22)", color: "#8fe3a8" },
+  "Award Winner": { bg: "rgba(255,180,63,0.22)", color: "#ffd23f" },
+  "In Development": { bg: "rgba(255,138,101,0.2)", color: C.sun },
+};
 
 const SKILLS = [
   "Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart",
@@ -241,120 +234,289 @@ function countFor(filter: Filter) {
 
 /* ── card pieces ───────────────────────────────────────────────────── */
 
-function LinkIcon({ kind }: { kind: Project["linkIcon"] }) {
-  if (kind === "github") return <Github size={16} color={C.cream} />;
-  if (kind === "resume") return <FileText size={16} color={C.cream} />;
-  return <ArrowUpRight size={16} color={C.cream} strokeWidth={2.4} />;
-}
-
-function ProjectCard({ p }: { p: Project }) {
+/** External-link buttons on the card back — GitHub, live demo, Devpost
+    writeup — only rendered when a real URL exists for that project. */
+function LinkButtons({
+  p,
+  onLinkClick,
+  tabIndex,
+}: {
+  p: Project;
+  onLinkClick: (e: React.MouseEvent) => void;
+  tabIndex: number;
+}) {
+  const btnStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    borderRadius: "999px",
+    padding: "8px 14px",
+    fontFamily: FONT,
+    fontWeight: 700,
+    fontSize: "12px",
+    textDecoration: "none",
+    cursor: "pointer",
+  };
   return (
-    <div
-      className="pbox"
-      style={{
-        width: "100%",
-        background: C.panel,
-        borderRadius: "22px",
-        border: `1px solid ${C.border}`,
-        padding: "14px",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
-      }}
-    >
-      {/* banner: photo (if any) + gradient wash, sigil mark, award ribbon, link button */}
-      <div
-        style={{
-          position: "relative",
-          height: "172px",
-          borderRadius: "16px",
-          background: p.photo
-            ? `${p.grad}, url(${p.photo}) center/cover no-repeat`
-            : p.grad,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span
-          className="card-icon"
-          style={{
-            display: "flex",
-            width: "84px",
-            height: "84px",
-            borderRadius: "50%",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.22)",
-            filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))",
-          }}
-        >
-          <p.icon size={40} color={C.cream} strokeWidth={1.4} />
-        </span>
-        {p.award && (
-          <span
-            style={{
-              position: "absolute",
-              top: "12px",
-              left: "12px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              background: "rgba(20,8,7,0.8)",
-              color: C.cream,
-              fontSize: "10px",
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-              padding: "5px 10px",
-              borderRadius: "999px",
-            }}
-          >
-            <Trophy size={11} color={C.cream} strokeWidth={2} />
-            {p.award}
-          </span>
-        )}
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+      {p.ghUrl && (
         <a
-          href={p.link}
+          href={p.ghUrl}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={`Open ${p.title}`}
+          onClick={onLinkClick}
+          tabIndex={tabIndex}
           className="btn-bounce"
+          style={{ ...btnStyle, background: "rgba(255,255,255,0.1)", color: C.cream, border: `1px solid ${C.border}` }}
+        >
+          <Github size={13} /> Code
+        </a>
+      )}
+      {p.demoUrl && (
+        <a
+          href={p.demoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onLinkClick}
+          tabIndex={tabIndex}
+          className="btn-bounce"
+          style={{ ...btnStyle, background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`, color: "#1a0605" }}
+        >
+          <ArrowUpRight size={13} strokeWidth={2.4} /> Live demo
+        </a>
+      )}
+      {p.devpostUrl && (
+        <a
+          href={p.devpostUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onLinkClick}
+          tabIndex={tabIndex}
+          className="btn-bounce"
+          style={{ ...btnStyle, background: "rgba(255,255,255,0.1)", color: C.cream, border: `1px solid ${C.border}` }}
+        >
+          <ArrowUpRight size={13} strokeWidth={2.4} /> Devpost writeup
+        </a>
+      )}
+    </div>
+  );
+}
+
+function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; onToggle: () => void }) {
+  const backId = useId();
+  const status = STATUS_STYLE[p.status];
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  return (
+    <div className="flip-scene">
+      <div className={"flip-card" + (flipped ? " is-flipped" : "")}>
+        {/* ── front face ── */}
+        <div
+          className="flip-face flip-face-front"
+          aria-hidden={flipped}
           style={{
-            position: "absolute",
-            top: "12px",
-            right: "12px",
-            width: "38px",
-            height: "38px",
-            borderRadius: "50%",
-            background: "rgba(20,8,7,0.82)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            textDecoration: "none",
+            background: C.panel,
+            borderRadius: "22px",
+            border: `1px solid ${C.border}`,
+            padding: "14px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
           }}
         >
-          <LinkIcon kind={p.linkIcon} />
-        </a>
-      </div>
+          {/* banner: photo (if any) + gradient wash, sigil mark, status badge, GitHub shortcut */}
+          <div
+            style={{
+              position: "relative",
+              height: "150px",
+              borderRadius: "16px",
+              flexShrink: 0,
+              background: p.photo ? `${p.grad}, url(${p.photo}) center/cover no-repeat` : p.grad,
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span
+              className="card-icon"
+              style={{
+                display: "flex",
+                width: "72px",
+                height: "72px",
+                borderRadius: "50%",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.22)",
+                filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))",
+              }}
+            >
+              <p.icon size={34} color={C.cream} strokeWidth={1.4} />
+            </span>
+            <span
+              style={{
+                position: "absolute",
+                top: "10px",
+                left: "10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                background: "rgba(20,8,7,0.82)",
+                color: status.color,
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                padding: "5px 10px",
+                borderRadius: "999px",
+              }}
+            >
+              {p.status === "Award Winner" && <Trophy size={11} color={status.color} strokeWidth={2} />}
+              {p.status}
+            </span>
+            {p.ghUrl && (
+              <a
+                href={p.ghUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={stop}
+                tabIndex={flipped ? -1 : 0}
+                aria-label={`Open ${p.title} on GitHub`}
+                className="btn-bounce"
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  background: "rgba(20,8,7,0.82)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                }}
+              >
+                <Github size={15} color={C.cream} />
+              </a>
+            )}
+          </div>
 
-      {/* title + description */}
-      <div
-        className="serif"
-        style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "20px", color: C.dark, marginTop: "14px", letterSpacing: "0.005em" }}
-      >
-        {p.title}
-      </div>
-      <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.6, color: C.moss, marginTop: "8px", minHeight: "82px" }}>
-        {p.desc}
-      </p>
+          {/* title + description */}
+          <div
+            className="serif"
+            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.dark, marginTop: "12px", letterSpacing: "0.005em" }}
+          >
+            {p.title}
+          </div>
+          <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.55, color: C.moss, marginTop: "6px", flex: 1 }}>{p.desc}</p>
 
-      {/* colored hashtags */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-        {p.tags.map((tag) => (
-          <span key={tag.label} style={{ fontSize: "13px", fontWeight: 700, color: TAG_COLOR[tag.tone] }}>
-            #{tag.label}
-          </span>
-        ))}
+          {/* colored hashtags */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 10px", marginTop: "10px" }}>
+            {p.tags.map((tag, i) => (
+              <span key={tag} style={{ fontSize: "12px", fontWeight: 700, color: TAG_COLORS[i % TAG_COLORS.length] }}>
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* flip control */}
+          <button
+            type="button"
+            onClick={onToggle}
+            tabIndex={flipped ? -1 : 0}
+            aria-expanded={flipped}
+            aria-controls={backId}
+            aria-label={`View details for ${p.title}`}
+            className="tab"
+            style={{
+              marginTop: "12px",
+              width: "100%",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              cursor: "pointer",
+              borderRadius: "999px",
+              padding: "10px 14px",
+              fontFamily: FONT,
+              fontWeight: 700,
+              fontSize: "13px",
+              border: `1px solid ${C.border}`,
+              background: "rgba(255,255,255,0.04)",
+              color: C.cream,
+            }}
+          >
+            View details <ArrowUpRight size={14} strokeWidth={2.4} />
+          </button>
+        </div>
+
+        {/* ── back face: case-study detail ── */}
+        <div
+          id={backId}
+          className="flip-face flip-face-back"
+          aria-hidden={!flipped}
+          style={{
+            background: DARK_GRAD,
+            borderRadius: "22px",
+            border: "1px solid rgba(226,72,58,0.22)",
+            padding: "16px",
+          }}
+        >
+          <div
+            className="serif"
+            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "18px", color: C.cream, letterSpacing: "0.005em" }}
+          >
+            {p.title}
+          </div>
+
+          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
+            {p.back.sections.map((s) => (
+              <div key={s.label}>
+                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.sun }}>
+                  {s.label}
+                </div>
+                <p style={{ fontSize: "12.5px", fontWeight: 500, lineHeight: 1.55, color: "rgba(243,222,210,0.82)", marginTop: "3px" }}>
+                  {s.text}
+                </p>
+              </div>
+            ))}
+            <div>
+              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.sun }}>
+                Technology
+              </div>
+              <p style={{ fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5, color: C.cream, marginTop: "3px" }}>{p.back.tech}</p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <LinkButtons p={p} onLinkClick={stop} tabIndex={flipped ? 0 : -1} />
+            <button
+              type="button"
+              onClick={onToggle}
+              tabIndex={flipped ? 0 : -1}
+              aria-expanded={flipped}
+              aria-controls={backId}
+              aria-label={`Flip back to ${p.title} summary`}
+              className="btn-bounce"
+              style={{
+                alignSelf: "flex-start",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                cursor: "pointer",
+                borderRadius: "999px",
+                padding: "8px 14px",
+                fontFamily: FONT,
+                fontWeight: 700,
+                fontSize: "12px",
+                border: "1px solid rgba(255,255,255,0.16)",
+                background: "rgba(255,255,255,0.06)",
+                color: C.cream,
+              }}
+            >
+              <RotateCcw size={13} /> Flip back
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -364,7 +526,13 @@ function ProjectCard({ p }: { p: Project }) {
 
 export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
   const [filter, setFilter] = useState<Filter>("All Projects");
+  const [flippedTitle, setFlippedTitle] = useState<string | null>(null);
   const shown = PROJECTS.filter((p) => filter === "All Projects" || p.cats.includes(filter));
+
+  const selectFilter = (f: Filter) => {
+    setFilter(f);
+    setFlippedTitle(null); // don't leave an orphaned flipped card behind a changed filter
+  };
 
   const resumeCard: React.CSSProperties = {
     background: C.panel,
@@ -411,7 +579,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
             return (
               <button
                 key={tab}
-                onClick={() => setFilter(tab)}
+                onClick={() => selectFilter(tab)}
                 className="tab"
                 style={{
                   display: "inline-flex",
@@ -445,11 +613,26 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
           }}
         />
 
+        {/* ── selected-work header ── */}
+        <h2
+          className="serif"
+          style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(22px, 2.6vw, 30px)", color: C.dark, margin: 0, letterSpacing: "0.01em" }}
+        >
+          Selected Work
+        </h2>
+        <p style={{ maxWidth: "620px", marginTop: "8px", marginBottom: "20px", fontSize: "14px", fontWeight: 500, lineHeight: 1.6, color: C.moss }}>
+          Products and experiments across edge AI, health technology, automation, and applied machine learning.
+        </p>
+
         {/* ── filtered project grid ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "20px" }}>
           {shown.map((p, i) => (
             <Reveal key={`${filter}-${p.title}`} delay={i * 55} style={{ display: "flex" }}>
-              <ProjectCard p={p} />
+              <ProjectCard
+                p={p}
+                flipped={flippedTitle === p.title}
+                onToggle={() => setFlippedTitle(flippedTitle === p.title ? null : p.title)}
+              />
             </Reveal>
           ))}
         </div>
@@ -464,7 +647,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   NVIDIA AI &amp; Machine Learning Instructor
                 </div>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
-                  iD Tech at Stanford University · Jun 2026 – Present
+                  iD Tech · Stanford, CA · Jun 2026 – Present
                 </div>
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
                   Software Engineering Intern

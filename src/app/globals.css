@@ -325,3 +325,79 @@ body::after {
   .card-icon,
   .tile { transition: none; }
 }
+
+/* ── flip-card — project cards that flip to a case-study back face ───
+   .flip-scene sizes the card and gives it 3D perspective; .flip-card
+   rotates on Y; .flip-face is shared front/back styling with
+   backface-visibility hidden so only one face ever shows. Reduced
+   motion swaps the rotation for a plain cross-fade. ──────────────── */
+.flip-scene {
+  position: relative;
+  width: 100%;
+  min-height: 640px;
+  perspective: 1600px;
+}
+.flip-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  transition: transform 0.45s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.flip-face-back {
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  /* fixed-height 3D rotation doesn't work once the back needs to grow
+     taller than the front, so mobile swaps to a plain instant toggle
+     and lets the card's own height follow whichever face is showing */
+  .flip-scene { min-height: 0; perspective: none; }
+  .flip-card { height: auto; transition: none; transform: none !important; }
+  .flip-face { position: relative; inset: auto; backface-visibility: visible; display: none; }
+  .flip-face-front { display: flex; }
+  .flip-face-back { transform: none; overflow: visible; }
+  .flip-card.is-flipped .flip-face-front { display: none; }
+  .flip-card.is-flipped .flip-face-back { display: flex; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card {
+    transition: none;
+  }
+  .flip-card,
+  .flip-card.is-flipped {
+    transform: none;
+  }
+  .flip-face-front { transition: opacity 0.2s ease; }
+  .flip-face-back {
+    position: absolute;
+    inset: 0;
+    transform: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .flip-card.is-flipped .flip-face-front {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .flip-card.is-flipped .flip-face-back {
+    opacity: 1;
+    pointer-events: auto;
+    position: relative;
+  }
+}
