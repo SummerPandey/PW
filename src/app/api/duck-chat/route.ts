@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /* ────────────────────────────────────────────────────────────────────
-   /api/duck-chat — answers as Summer's coding duck, backed by Claude.
+   /api/duck-chat — answers as Summer's coding duck, backed by Groq.
 
    Public, unauthenticated, and rate-limited per IP since it's a fun
    widget on a portfolio site, not a real product surface.
@@ -22,7 +22,7 @@ Facts about Summer Pandey, for you to draw on:
 
 If asked something you don't know about Summer, say so honestly rather than inventing details. If the question has nothing to do with Summer or coding, you can still chat briefly, but steer things back toward her work with good humor.`;
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "llama-3.3-70b-versatile";
 const MAX_MESSAGE_LEN = 500;
 const RATE_LIMIT = 20; // requests
 const RATE_WINDOW_MS = 10 * 60 * 1000; // per 10 minutes, per IP
@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "The duck needs a breather — try again in a bit." }, { status: 429 });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return NextResponse.json({
-      reply: "quack — my brain isn't wired up yet. Summer needs to add an ANTHROPIC_API_KEY before I can really talk.",
+      reply: "quack — my brain isn't wired up yet. Summer needs to add a GROQ_API_KEY before I can really talk.",
     });
   }
 
@@ -81,18 +81,20 @@ export async function POST(req: NextRequest) {
     : [];
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 300,
-        system: DUCK_SYSTEM_PROMPT,
-        messages: [...history, { role: "user", content: message }],
+        messages: [
+          { role: "system", content: DUCK_SYSTEM_PROMPT },
+          ...history,
+          { role: "user", content: message },
+        ],
       }),
     });
 
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    const reply = data?.content?.[0]?.text;
+    const reply = data?.choices?.[0]?.message?.content;
     if (typeof reply !== "string" || !reply.trim()) {
       return NextResponse.json({ reply: "quack — lost my train of thought. One more time?" });
     }
