@@ -11,6 +11,12 @@ import {
   Trophy,
   ShieldCheck,
   RotateCcw,
+  Dumbbell,
+  Aperture,
+  BarChart3,
+  Cast,
+  CircleDot,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
@@ -207,6 +213,116 @@ const PROJECTS: Project[] = [
       tech: "Python · OpenCV · Raspberry Pi · Computer Vision",
     },
     cats: ["AI/ML", "Robotics"],
+  },
+  {
+    title: "Wlog",
+    icon: Dumbbell,
+    status: "Prototype",
+    desc: "A Chrome extension that logs workouts from plain language, cutting manual entry time.",
+    grad: "linear-gradient(150deg, #d97a4d, #8a3a1e)",
+    tags: ["chrome-extension", "openai", "nodejs"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "A Google Chrome extension to log workouts from plain language — cut manual entry 40%, 200+ entries stored.",
+        },
+      ],
+      tech: "Chrome Extension · OpenAI · Node.js",
+    },
+    cats: ["AI/ML"],
+  },
+  {
+    title: "Portfolio Website",
+    icon: Aperture,
+    status: "Live",
+    desc: "This site — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
+    grad: "linear-gradient(150deg, #8a4a4a, #3a1616)",
+    ghUrl: "https://github.com/SummerPandey/PW",
+    demoUrl: "https://summerpandey.vercel.app",
+    tags: ["nextjs", "react", "typescript"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "The site you're looking at right now — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
+        },
+      ],
+      tech: "Next.js · React · TypeScript",
+    },
+    cats: ["Frontend"],
+  },
+  {
+    title: "Data Project",
+    icon: BarChart3,
+    status: "Prototype",
+    desc: "Twitter sentiment analysis — cleaning, modeling, and visualizing public sentiment from tweet data.",
+    grad: "linear-gradient(150deg, #c96a4a, #7a2e1e)",
+    tags: ["python", "nlp", "data-science"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "Twitter sentiment analysis — cleaning, modeling and visualizing public sentiment from tweet data.",
+        },
+      ],
+      tech: "Python · NLP · Data Science",
+    },
+    cats: ["AI/ML", "NLP"],
+  },
+  {
+    title: "CS SI · AuraTV",
+    icon: Cast,
+    status: "Prototype",
+    desc: "A streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
+    grad: "linear-gradient(150deg, #8a3230, #2a0e0e)",
+    tags: ["flutter", "firebase", "youtube-api"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "AuraTV — a streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
+        },
+      ],
+      tech: "Flutter · Firebase · YouTube API",
+    },
+    cats: ["Frontend"],
+  },
+  {
+    title: "Volleyball Organizer",
+    icon: CircleDot,
+    status: "Prototype",
+    desc: "A volleyball tournament organizer — building brackets, scheduling matches, and tracking results.",
+    grad: "linear-gradient(150deg, #d16a4a, #8a3018)",
+    tags: ["app", "scheduling"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "A volleyball tournament organizer — building brackets, scheduling matches and tracking results.",
+        },
+      ],
+      tech: "App · Scheduling",
+    },
+    cats: ["Frontend"],
+  },
+  {
+    title: "MMM",
+    icon: TrendingUp,
+    status: "Prototype",
+    desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes with SQL and Python.",
+    grad: "linear-gradient(150deg, #b04a3a, #5a1e14)",
+    tags: ["python", "sql", "marketing"],
+    back: {
+      sections: [
+        {
+          label: "Overview",
+          text: "Multi-marketing modeling — quantifying how marketing channels drive outcomes, with SQL & Python and channel-ROI reporting.",
+        },
+      ],
+      tech: "Python · SQL · Marketing Analytics",
+    },
+    cats: ["Backend"],
   },
 ];
 
