@@ -30,8 +30,10 @@ import { Reveal } from "./fx";
 
 /* ── project data ──────────────────────────────────────────────────── */
 
-// Hashtag/tag colors, cycled by index.
-const TAG_COLORS = [C.leaf, C.wood, "#c9702e", C.teal] as const;
+// Technology tags — restrained golden-yellow, per the brand's "use yellow
+// sparingly for tags" rule. A single muted tone keeps a row of 4-5 tags
+// from reading as a rainbow.
+const TAG_COLORS = [C.sun] as const;
 
 type Category = "AI/ML" | "Backend" | "Frontend" | "NLP" | "Robotics";
 type Filter = "All Projects" | Category;
@@ -63,7 +65,7 @@ const PROJECTS: Project[] = [
     icon: ShieldCheck,
     status: "In Development",
     desc: "Privacy-first edge AI for monitoring operating-room safety without sending sensitive video to the cloud.",
-    grad: "linear-gradient(150deg, rgba(20,54,31,0.55), rgba(10,20,14,0.85))",
+    grad: "linear-gradient(150deg, rgba(58,49,18,0.55), rgba(10,10,10,0.85))",
     photo: "/images/jetson-device.jpg",
     tags: ["python", "computer-vision", "jetson", "gemini-ai"],
     ghUrl: "https://github.com/SummerPandey/Argus_0.1",
@@ -95,7 +97,7 @@ const PROJECTS: Project[] = [
     icon: Activity,
     status: "Live",
     desc: "An AI-assisted health and workout tracker that turns photo, voice, and text logs into structured daily records.",
-    grad: "linear-gradient(150deg, #c0453a, #5c1414)",
+    grad: "linear-gradient(150deg, #3a3214, #121313)",
     tags: ["typescript", "react", "supabase", "postgresql", "ai"],
     ghUrl: "https://github.com/SummerPandey/Venture_Gain",
     demoUrl: "https://venture-gain.vercel.app",
@@ -127,7 +129,7 @@ const PROJECTS: Project[] = [
     icon: Stethoscope,
     status: "Award Winner",
     desc: "A Gemini-powered preventive-health app that creates personalized health checklists from demographic and regional risk factors.",
-    grad: "linear-gradient(150deg, rgba(107,31,31,0.6), rgba(30,8,8,0.88))",
+    grad: "linear-gradient(150deg, rgba(58,44,10,0.6), rgba(10,10,10,0.88))",
     photo: "/images/team-photo-2.jpg",
     tags: ["flutter", "firebase", "gemini-ai", "health-tech"],
     devpostUrl: "https://devpost.com/software/preventia-sblncy",
@@ -159,7 +161,7 @@ const PROJECTS: Project[] = [
     icon: Coins,
     status: "Prototype",
     desc: "A machine-learning pipeline that scores sentiment in cryptocurrency news and social-media discussions.",
-    grad: "linear-gradient(150deg, #d9895a, #a34a1e)",
+    grad: "linear-gradient(150deg, #4a3f1a, #16130a)",
     tags: ["python", "roberta", "vader", "nlp"],
     back: {
       sections: [
@@ -189,7 +191,7 @@ const PROJECTS: Project[] = [
     icon: Navigation,
     status: "Prototype",
     desc: "A Raspberry Pi robotics car that uses real-time lane detection for autonomous navigation.",
-    grad: "linear-gradient(150deg, #9a5a52, #4a2018)",
+    grad: "linear-gradient(150deg, #3d3416, #171310)",
     tags: ["python", "opencv", "raspberry-pi", "robotics"],
     back: {
       sections: [
@@ -219,7 +221,7 @@ const PROJECTS: Project[] = [
     icon: Dumbbell,
     status: "Prototype",
     desc: "A Chrome extension that logs workouts from plain language, cutting manual entry time.",
-    grad: "linear-gradient(150deg, #d97a4d, #8a3a1e)",
+    grad: "linear-gradient(150deg, #453b16, #1a1610)",
     tags: ["chrome-extension", "openai", "nodejs"],
     back: {
       sections: [
@@ -237,7 +239,7 @@ const PROJECTS: Project[] = [
     icon: Aperture,
     status: "Live",
     desc: "This site — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
-    grad: "linear-gradient(150deg, #8a4a4a, #3a1616)",
+    grad: "linear-gradient(150deg, #3a3420, #16140f)",
     ghUrl: "https://github.com/SummerPandey/PW",
     demoUrl: "https://summerpandey.vercel.app",
     tags: ["nextjs", "react", "typescript"],
@@ -257,7 +259,7 @@ const PROJECTS: Project[] = [
     icon: BarChart3,
     status: "Prototype",
     desc: "Twitter sentiment analysis — cleaning, modeling, and visualizing public sentiment from tweet data.",
-    grad: "linear-gradient(150deg, #c96a4a, #7a2e1e)",
+    grad: "linear-gradient(150deg, #423a19, #18150d)",
     tags: ["python", "nlp", "data-science"],
     back: {
       sections: [
@@ -275,7 +277,7 @@ const PROJECTS: Project[] = [
     icon: Cast,
     status: "Prototype",
     desc: "A streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
-    grad: "linear-gradient(150deg, #8a3230, #2a0e0e)",
+    grad: "linear-gradient(150deg, #383014, #14120a)",
     tags: ["flutter", "firebase", "youtube-api"],
     back: {
       sections: [
@@ -293,7 +295,7 @@ const PROJECTS: Project[] = [
     icon: CircleDot,
     status: "Prototype",
     desc: "A volleyball tournament organizer — building brackets, scheduling matches, and tracking results.",
-    grad: "linear-gradient(150deg, #d16a4a, #8a3018)",
+    grad: "linear-gradient(150deg, #473d17, #1c170e)",
     tags: ["app", "scheduling"],
     back: {
       sections: [
@@ -311,7 +313,7 @@ const PROJECTS: Project[] = [
     icon: TrendingUp,
     status: "Prototype",
     desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes with SQL and Python.",
-    grad: "linear-gradient(150deg, #b04a3a, #5a1e14)",
+    grad: "linear-gradient(150deg, #3f3618, #17140b)",
     tags: ["python", "sql", "marketing"],
     back: {
       sections: [
@@ -331,8 +333,8 @@ const TABS: Filter[] = ["All Projects", "AI/ML", "Backend", "Frontend", "NLP", "
 const STATUS_STYLE: Record<Status, { bg: string; color: string }> = {
   Prototype: { bg: "rgba(255,255,255,0.14)", color: C.cream },
   Live: { bg: "rgba(90,200,120,0.22)", color: "#8fe3a8" },
-  "Award Winner": { bg: "rgba(255,180,63,0.22)", color: "#ffd23f" },
-  "In Development": { bg: "rgba(255,138,101,0.2)", color: C.sun },
+  "Award Winner": { bg: "rgba(255,212,71,0.22)", color: "#FFD447" },
+  "In Development": { bg: "rgba(234,170,34,0.2)", color: C.sun },
 };
 
 const SKILLS = [
@@ -396,7 +398,7 @@ function LinkButtons({
           onClick={onLinkClick}
           tabIndex={tabIndex}
           className="btn-bounce"
-          style={{ ...btnStyle, background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`, color: "#1a0605" }}
+          style={{ ...btnStyle, background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`, color: "#080909" }}
         >
           <ArrowUpRight size={13} strokeWidth={2.4} /> Live demo
         </a>
@@ -476,7 +478,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "5px",
-                background: "rgba(20,8,7,0.82)",
+                background: "rgba(8,9,9,0.85)",
                 color: status.color,
                 fontSize: "10px",
                 fontWeight: 700,
@@ -504,7 +506,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                   width: "34px",
                   height: "34px",
                   borderRadius: "50%",
-                  background: "rgba(20,8,7,0.82)",
+                  background: "rgba(8,9,9,0.85)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -573,7 +575,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
           style={{
             background: DARK_GRAD,
             borderRadius: "22px",
-            border: "1px solid rgba(226,72,58,0.22)",
+            border: "1px solid rgba(234,170,34,0.18)",
             padding: "16px",
           }}
         >
@@ -590,7 +592,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                 <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.sun }}>
                   {s.label}
                 </div>
-                <p style={{ fontSize: "12.5px", fontWeight: 500, lineHeight: 1.55, color: "rgba(243,222,210,0.82)", marginTop: "3px" }}>
+                <p style={{ fontSize: "12.5px", fontWeight: 500, lineHeight: 1.55, color: "rgba(255,249,232,0.82)", marginTop: "3px" }}>
                   {s.text}
                 </p>
               </div>
@@ -659,7 +661,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
   const resumeCardDark: React.CSSProperties = {
     background: DARK_GRAD,
     borderRadius: "20px",
-    border: "1px solid rgba(226,72,58,0.18)",
+    border: "1px solid rgba(234,170,34,0.16)",
     padding: "20px 22px",
   };
   const cardLabel = (dark?: boolean): React.CSSProperties => ({
@@ -710,8 +712,8 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   letterSpacing: "0.01em",
                   border: on ? "1px solid transparent" : `1px solid ${C.border}`,
                   background: on ? `linear-gradient(90deg, ${C.leaf}, ${C.sun})` : C.panel,
-                  color: on ? "#1a0605" : C.moss,
-                  boxShadow: on ? "0 6px 16px rgba(226,72,58,0.22)" : "none",
+                  color: on ? "#080909" : C.moss,
+                  boxShadow: on ? "0 6px 16px rgba(234,170,34,0.18)" : "none",
                 }}
               >
                 {tab}
@@ -762,13 +764,13 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream }}>
                   NVIDIA AI &amp; Machine Learning Instructor
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,249,232,0.6)", marginTop: "3px" }}>
                   iD Tech · Stanford, CA · Jun 2026 – Present
                 </div>
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
                   Software Engineering Intern
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,249,232,0.6)", marginTop: "3px" }}>
                   Sports Media Inc. · Jun 2025 – Aug 2025
                 </div>
               </div>
@@ -799,7 +801,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                       fontWeight: 600,
                       color: C.bark,
                       border: `1px solid ${C.border}`,
-                      background: "rgba(226,72,58,0.1)",
+                      background: "rgba(234,170,34,0.12)",
                       borderRadius: "999px",
                       padding: "4px 11px",
                     }}
@@ -818,7 +820,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
             style={{
               background: DARK_GRAD,
               borderRadius: "20px",
-              border: "1px solid rgba(226,72,58,0.18)",
+              border: "1px solid rgba(234,170,34,0.16)",
               padding: "24px 28px",
               display: "flex",
               alignItems: "center",
@@ -862,7 +864,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontFamily: FONT,
                   fontWeight: 700,
                   fontSize: "13px",
-                  color: "#1a0605",
+                  color: "#080909",
                 }}
               >
                 Say hello ✉

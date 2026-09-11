@@ -79,7 +79,7 @@ function CursorGlow() {
         height: "180px",
         borderRadius: "50%",
         background:
-          "radial-gradient(circle, rgba(226,72,58,0.4) 0%, rgba(226,72,58,0.18) 40%, rgba(226,72,58,0) 70%)",
+          "radial-gradient(circle, rgba(234,170,34,0.32) 0%, rgba(234,170,34,0.14) 40%, rgba(234,170,34,0) 70%)",
         pointerEvents: "none",
         zIndex: 88,
         opacity: 0,
@@ -98,7 +98,7 @@ function CloudPuff({ label }: { label?: string }) {
     <svg
       viewBox="0 0 240 150"
       width="100%"
-      style={{ display: "block", overflow: "visible", filter: "drop-shadow(0 12px 22px rgba(180,40,30,0.22))" }}
+      style={{ display: "block", overflow: "visible", filter: "drop-shadow(0 12px 22px rgba(0,0,0,0.35))" }}
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -114,8 +114,8 @@ function CloudPuff({ label }: { label?: string }) {
         <circle cx="172" cy="76" r="36" />
         <circle cx="200" cy="94" r="24" />
       </g>
-      {/* ember rim-light on top */}
-      <ellipse cx="100" cy="52" rx="30" ry="13" fill="rgba(255,138,101,0.16)" />
+      {/* golden rim-light on top */}
+      <ellipse cx="100" cy="52" rx="30" ry="13" fill="rgba(234,170,34,0.16)" />
       {label && (
         <text
           x="120"
@@ -125,7 +125,7 @@ function CloudPuff({ label }: { label?: string }) {
           fontFamily={FONT}
           fontSize="22"
           fontWeight="700"
-          fill="#f0dcd2"
+          fill="#FFF9E8"
           style={{ paintOrder: "stroke", stroke: "rgba(10,5,4,0.85)", strokeWidth: 3.5 }}
         >
           {label}
@@ -285,8 +285,8 @@ function Mote() {
             width: `${cfg.size}px`,
             height: `${cfg.size}px`,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,150,120,0.9), rgba(226,72,58,0.45) 45%, transparent 72%)",
-            boxShadow: "0 0 8px rgba(226,72,58,0.5)",
+            background: "radial-gradient(circle, rgba(255,212,71,0.9), rgba(234,170,34,0.45) 45%, transparent 72%)",
+            boxShadow: "0 0 8px rgba(234,170,34,0.5)",
             pointerEvents: "auto",
             animation: absorbing ? "mote-absorb 0.5s cubic-bezier(0.34,1.7,0.5,1) forwards" : undefined,
           }}
@@ -354,8 +354,8 @@ function Welcome({
             width: "120px",
             height: "120px",
             borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(255,150,120,${0.85 + 0.15 * g}), rgba(200,50,40,${0.55 + 0.45 * g}))`,
-            boxShadow: `0 0 ${46 + 180 * g}px rgba(200,50,40,${0.32 + 0.55 * g})`,
+            background: `radial-gradient(circle, rgba(255,212,71,${0.85 + 0.15 * g}), rgba(234,170,34,${0.55 + 0.45 * g}))`,
+            boxShadow: `0 0 ${46 + 180 * g}px rgba(234,170,34,${0.28 + 0.4 * g})`,
             zIndex: 2,
           }}
         />
@@ -586,7 +586,7 @@ export function Portfolio() {
           left: 0,
           right: 0,
           zIndex: 50,
-          background: "rgba(5,3,2,0.82)",
+          background: "rgba(8,9,9,0.82)",
           backdropFilter: "blur(10px)",
           borderBottom: `1px solid ${C.border}`,
           display: "grid",
@@ -659,7 +659,7 @@ export function Portfolio() {
           fontFamily: FONT,
           fontSize: "10px",
           fontWeight: 600,
-          color: "rgba(243,222,210,0.45)",
+          color: "rgba(255,249,232,0.45)",
           letterSpacing: "0.12em",
           textTransform: "uppercase",
           pointerEvents: "none",

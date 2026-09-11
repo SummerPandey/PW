@@ -107,10 +107,10 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
           maxHeight: "min(480px, calc(100vh - 100px))",
           display: "flex",
           flexDirection: "column",
-          background: "#130c0b",
-          border: "1px solid rgba(255,210,63,0.28)",
+          background: "#121313",
+          border: "1px solid rgba(255,212,71,0.28)",
           borderRadius: "18px",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,210,63,0.06)",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,212,71,0.06)",
           overflow: "hidden",
           fontFamily: FONT,
           animation: "toast-in 0.25s ease",
@@ -123,8 +123,8 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
             alignItems: "center",
             justifyContent: "space-between",
             padding: "12px 14px",
-            borderBottom: "1px solid rgba(255,210,63,0.16)",
-            background: "linear-gradient(180deg, rgba(255,210,63,0.08), transparent)",
+            borderBottom: "1px solid rgba(255,212,71,0.16)",
+            background: "linear-gradient(180deg, rgba(255,212,71,0.08), transparent)",
           }}
         >
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -180,9 +180,9 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
                 borderRadius: "14px",
                 borderBottomRightRadius: m.role === "user" ? "4px" : "14px",
                 borderBottomLeftRadius: m.role === "duck" ? "4px" : "14px",
-                background: m.role === "user" ? `linear-gradient(90deg, ${C.leaf}, ${C.sun})` : "#1c1110",
-                border: m.role === "duck" ? "1px solid rgba(255,210,63,0.18)" : "none",
-                color: m.role === "user" ? "#1a0605" : C.moss,
+                background: m.role === "user" ? `linear-gradient(90deg, ${C.leaf}, ${C.sun})` : "#1A1B1B",
+                border: m.role === "duck" ? "1px solid rgba(255,212,71,0.18)" : "none",
+                color: m.role === "user" ? "#080909" : C.moss,
                 fontSize: "13px",
                 fontWeight: 500,
                 lineHeight: 1.5,
@@ -198,8 +198,8 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
                 padding: "9px 12px",
                 borderRadius: "14px",
                 borderBottomLeftRadius: "4px",
-                background: "#1c1110",
-                border: "1px solid rgba(255,210,63,0.18)",
+                background: "#1A1B1B",
+                border: "1px solid rgba(255,212,71,0.18)",
                 color: C.muted,
                 fontSize: "13px",
               }}
@@ -218,7 +218,7 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
             display: "flex",
             gap: "8px",
             padding: "10px",
-            borderTop: "1px solid rgba(255,210,63,0.12)",
+            borderTop: "1px solid rgba(255,212,71,0.12)",
           }}
         >
           <input
@@ -232,7 +232,7 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
             maxLength={400}
             style={{
               flex: 1,
-              background: "#0d0807",
+              background: "#080909",
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: "999px",
               padding: "9px 14px",
@@ -251,8 +251,8 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
               height: "38px",
               borderRadius: "50%",
               border: "none",
-              background: "#ffd23f",
-              color: "#1a0605",
+              background: "#FFD447",
+              color: "#080909",
               fontWeight: 700,
               fontSize: "15px",
               cursor: loading || !input.trim() ? "default" : "pointer",

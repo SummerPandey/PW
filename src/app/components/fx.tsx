@@ -70,8 +70,8 @@ export function CodingDuck({
         opacity={clamp01(pop * 2.2)}
         style={{
           filter: awake
-            ? "drop-shadow(0 0 12px rgba(255,210,63,0.45))"
-            : "drop-shadow(0 0 6px rgba(226,72,58,0.28))",
+            ? "drop-shadow(0 0 12px rgba(255,212,71,0.4))"
+            : "drop-shadow(0 0 6px rgba(234,170,34,0.2))",
           transition: "filter 0.35s ease",
         }}
       >
@@ -86,7 +86,7 @@ export function CodingDuck({
 
       {/* "ask me" hint — fades in once the duck has settled, gone once awake */}
       <g opacity={hintFade} style={{ pointerEvents: "none" }}>
-        <rect x={58} y={86} width={114} height={26} rx={13} fill="#2a1210" stroke="#5c2620" strokeWidth={1.5} />
+        <rect x={58} y={86} width={114} height={26} rx={13} fill="#1A1B1B" stroke="#373221" strokeWidth={1.5} />
         <text
           x={115}
           y={100}
@@ -95,7 +95,7 @@ export function CodingDuck({
           fontFamily={FONT}
           fontSize={11.5}
           fontWeight={700}
-          fill="#f3e3dc"
+          fill="#FFF9E8"
         >
           ask me something
         </text>
@@ -110,8 +110,8 @@ export function CodingDuck({
         style={{ pointerEvents: tagFade > 0.6 ? "auto" : "none" }}
       >
         <g opacity={tagFade} style={{ cursor: "pointer" }}>
-          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="#2a1210" />
-          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="none" stroke="#5c2620" strokeWidth={1.5} />
+          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="#1A1B1B" />
+          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="none" stroke="#373221" strokeWidth={1.5} />
           <text
             x={150}
             y={319}
@@ -120,7 +120,7 @@ export function CodingDuck({
             fontFamily={FONT}
             fontSize={13}
             fontWeight={700}
-            fill="#f3e3dc"
+            fill="#FFF9E8"
           >
             Résumé ↓
           </text>
@@ -350,8 +350,8 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
         inset: 0,
         zIndex: 100,
         background:
-          "radial-gradient(900px 600px at 50% -10%, rgba(226,72,58,0.35), transparent 60%), " +
-          "linear-gradient(180deg, #1e0a0a 0%, #050302 100%)",
+          "radial-gradient(900px 600px at 50% -10%, rgba(234,170,34,0.2), transparent 60%), " +
+          "linear-gradient(180deg, #121313 0%, #080909 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -381,8 +381,8 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
             width: "56px",
             height: "56px",
             borderRadius: "50%",
-            background: "radial-gradient(circle, #ff8a65, #e2483a)",
-            boxShadow: "0 0 38px rgba(226,72,58,0.7)",
+            background: "radial-gradient(circle, #FFD447, #EAAA22)",
+            boxShadow: "0 0 38px rgba(234,170,34,0.5)",
             animation: "sun-pulse 2.4s ease-in-out infinite",
           }}
         />
@@ -431,7 +431,7 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
       <div
         style={{
           fontSize: "10px",
-          color: "rgba(243,222,210,0.5)",
+          color: "rgba(255,249,232,0.5)",
           letterSpacing: "0.14em",
           marginTop: "6px",
           textTransform: "uppercase",
@@ -483,7 +483,7 @@ type Ember = {
   color: string;
 };
 
-const EMBER_COLORS = ["#e2483a", "#ff8a65", "#c9382a", "#f0dcd2"];
+const EMBER_COLORS = ["#FFD447", "#EAAA22", "#B9942F", "#FFF9E8"];
 
 function makeEmbers(): Ember[] {
   return Array.from({ length: 46 }, () => ({

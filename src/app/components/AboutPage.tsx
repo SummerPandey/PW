@@ -21,7 +21,7 @@ function Label({ children, dark }: { children: React.ReactNode; dark?: boolean }
         fontSize: "11px",
         fontWeight: 700,
         textTransform: "uppercase",
-        color: dark ? "rgba(243,222,210,0.55)" : C.muted,
+        color: dark ? "rgba(255,249,232,0.55)" : C.muted,
         letterSpacing: "0.18em",
       }}
     >
@@ -54,7 +54,7 @@ function Box({
       style={{
         position: "relative",
         background: dark ? DARK_GRAD : C.panel,
-        border: `1px solid ${dark ? "rgba(226,72,58,0.18)" : C.border}`,
+        border: `1px solid ${dark ? "rgba(234,170,34,0.16)" : C.border}`,
         borderRadius: RADIUS,
         padding: "16px 18px",
         cursor: onClick ? "pointer" : "default",
@@ -129,8 +129,8 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                     width: "30px",
                     height: "30px",
                     borderRadius: "50%",
-                    background: "radial-gradient(circle, #ff8a65, #e2483a)",
-                    boxShadow: "0 0 22px rgba(226,72,58,0.55)",
+                    background: "radial-gradient(circle, #FFD447, #EAAA22)",
+                    boxShadow: "0 0 22px rgba(234,170,34,0.4)",
                     animation: "sun-pulse 3s ease-in-out infinite",
                   }}
                 />
@@ -149,14 +149,14 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   height: "52px",
                   borderRadius: "50%",
                   objectFit: "cover",
-                  border: "1.5px solid rgba(255,220,210,0.4)",
+                  border: "1.5px solid rgba(234,170,34,0.4)",
                   flexShrink: 0,
                 }}
               />
             </div>
 
             <div>
-              <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(243,222,210,0.55)" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,249,232,0.55)" }}>
                 Summer Pandey · Software Engineer
               </div>
               <div
@@ -193,11 +193,11 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontFamily: FONT,
                   fontWeight: 700,
                   fontSize: "13px",
-                  color: "#1a0605",
+                  color: "#080909",
                   letterSpacing: "0.04em",
                 }}
               >
-                Explore my work <ArrowUpRight size={15} color="#1a0605" strokeWidth={2.5} />
+                Explore my work <ArrowUpRight size={15} color="#080909" strokeWidth={2.5} />
               </button>
             </div>
           </Box>
@@ -305,7 +305,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 flex: 1,
                 margin: "10px 0",
                 borderRadius: "12px",
-                background: "linear-gradient(160deg, #9a5a52, #4a2018)",
+                background: "linear-gradient(160deg, #2b2410, #121313)",
                 minHeight: "40px",
                 padding: "8px 10px",
                 display: "flex",
@@ -335,7 +335,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 flex: 1,
                 margin: "10px 0",
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #d9895a, #a34a1e)",
+                background: "linear-gradient(135deg, #3a3214, #151512)",
                 minHeight: "40px",
                 display: "flex",
                 flexWrap: "wrap",
@@ -351,8 +351,8 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   style={{
                     fontSize: "9.5px",
                     fontWeight: 700,
-                    color: "#2a0e0e",
-                    background: "rgba(255,255,255,0.28)",
+                    color: "#080909",
+                    background: "rgba(255,212,71,0.35)",
                     borderRadius: "999px",
                     padding: "3px 7px",
                     letterSpacing: "0.01em",
@@ -386,12 +386,12 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   padding: "8px 14px",
                   fontSize: "12px",
                   fontWeight: 700,
-                  color: "#1a0605",
+                  color: "#080909",
                   letterSpacing: "0.02em",
                   textDecoration: "none",
                 }}
               >
-                <Trophy size={13} color="#1a0605" strokeWidth={2.2} />
+                <Trophy size={13} color="#080909" strokeWidth={2.2} />
                 Best Use of Gemini AI · HackAugie
               </a>
               {WINS.map((win) => (
@@ -435,7 +435,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                       fontWeight: 600,
                       color: C.bark,
                       border: `1px solid ${C.border}`,
-                      background: "rgba(226,72,58,0.1)",
+                      background: "rgba(234,170,34,0.12)",
                       borderRadius: "999px",
                       padding: "6px 13px",
                       letterSpacing: "0.01em",
