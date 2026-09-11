@@ -6,9 +6,9 @@ import { C, FONT } from "./theme";
 /* ────────────────────────────────────────────────────────────────────
    fx.tsx — the site's little moments of delight.
 
-   Small, self-contained effects: the sprout logo, the scroll-grown
-   treeline, a live clock, a typewriter, scroll reveals, the boot
-   screen, and a couple of playful easter eggs.
+   Small, self-contained effects: the sprout logo, the coding duck
+   that pops in on scroll, a live clock, a typewriter, scroll reveals,
+   the boot screen, and a couple of playful easter eggs.
    ──────────────────────────────────────────────────────────────────── */
 
 /** Clamp a value into the 0–1 range. */
@@ -35,105 +35,136 @@ export function Sprout({ size = 22, className }: { size?: number; className?: st
   );
 }
 
-/* ── GrowingTrees — a bare, wind-swept treeline rises as p goes 0 → 1 ──
-   Each tree starts at its own delay so the grove climbs in a wave.
-   A résumé tag sits at the root of the tallest tree. ───────────────── */
+/* ── CodingDuck — a duck at a laptop pops in as p goes 0 → 1. In the
+   dark it's a strong black silhouette with glowing red eyes; click it
+   and it flips cute and yellow, ready to chat. A résumé tag sits by
+   its feet. ── */
 
-type TreeCfg = {
-  x: number; // trunk base, in the 0–1000 viewBox
-  h: number; // full-grown height
-  lean: number; // tip drift, px — the wind direction
-  delay: number; // 0–1 slice of growth before this tree starts climbing
-  branches: number;
+const DUCK_PALETTE = {
+  dark: { body: "#0a0403", accent: "#3a1c16", eyeRing: "none" },
+  awake: { body: "#ffd23f", accent: "#f5a623", eyeRing: "#fff" },
 };
 
-const BASE_Y = 300;
-
-// Deterministic, hand-placed — not random, so server and client agree.
-const TREES: TreeCfg[] = [
-  { x: 40, h: 108, lean: -14, delay: 0.16, branches: 3 },
-  { x: 150, h: 168, lean: 10, delay: 0.04, branches: 4 },
-  { x: 260, h: 128, lean: -8, delay: 0.22, branches: 3 },
-  { x: 380, h: 196, lean: 14, delay: 0.0, branches: 5 },
-  { x: 500, h: 236, lean: 8, delay: 0.1, branches: 5 }, // tallest — carries the résumé tag
-  { x: 630, h: 172, lean: -12, delay: 0.18, branches: 4 },
-  { x: 750, h: 118, lean: 9, delay: 0.06, branches: 3 },
-  { x: 860, h: 152, lean: -10, delay: 0.26, branches: 4 },
-  { x: 960, h: 100, lean: 12, delay: 0.12, branches: 3 },
-];
-
-const TAG_TREE = TREES[4];
-
-/** One bare tree: a curved trunk with branches that sprout in as the
-    trunk climbs past them, angled outward like wind-bent limbs. */
-function Tree({ cfg, g }: { cfg: TreeCfg; g: number }) {
-  const growth = clamp01((g - cfg.delay) / (0.92 - cfg.delay));
-  if (growth <= 0) return null;
-
-  const h = cfg.h * growth;
-  const tipX = cfg.x + cfg.lean * growth;
-  const tipY = BASE_Y - h;
-  const trunkPath = `M${cfg.x} ${BASE_Y} Q${cfg.x + cfg.lean * 0.4 * growth} ${BASE_Y - h * 0.55} ${tipX} ${tipY}`;
-
-  const branches = Array.from({ length: cfg.branches }, (_, i) => {
-    const frac = 0.32 + (i / cfg.branches) * 0.6; // spread up the trunk
-    const bGrowth = clamp01((growth - frac * 0.6) / (1 - frac * 0.6));
-    if (bGrowth <= 0) return null;
-
-    const alongX = cfg.x + cfg.lean * growth * frac;
-    const alongY = BASE_Y - h * frac;
-    const side = i % 2 === 0 ? 1 : -1;
-    const len = (16 + i * 3.5) * bGrowth;
-    const rad = (side * (34 + i * 7) * Math.PI) / 180;
-    const endX = alongX + Math.sin(rad) * len;
-    const endY = alongY - Math.cos(rad) * len * 0.75;
-
-    return (
-      <path
-        key={i}
-        d={`M${alongX} ${alongY} Q${alongX + Math.sin(rad) * len * 0.5} ${alongY - len * 0.4} ${endX} ${endY}`}
-        stroke="#3a1c16"
-        strokeWidth={Math.max(1.3, 3.4 - i * 0.35)}
-        strokeLinecap="round"
-        fill="none"
-        opacity={bGrowth}
-      />
-    );
-  });
-
-  return (
-    <g opacity={clamp01(growth * 3)} style={{ filter: "drop-shadow(0 0 5px rgba(226,72,58,0.3))" }}>
-      <path d={trunkPath} stroke="#3a1c16" strokeWidth={Math.max(2.8, 5.5 * growth)} strokeLinecap="round" fill="none" />
-      {branches}
-    </g>
-  );
-}
-
-export function GrowingTrees({
+export function CodingDuck({
   p,
+  awake = false,
+  onActivate,
   className,
   resumeHref,
 }: {
   p: number;
+  awake?: boolean;
+  onActivate?: () => void;
   className?: string;
   resumeHref?: string;
 }) {
   const g = clamp01(p);
-  const groveGrowth = clamp01(g / 0.5); // how settled-in the ground looks
-  const tagFade = clamp01((g - 0.12) / 0.15);
+  const pop = clamp01((g - 0.05) / 0.4); // pop-in with a little overshoot
+  const scale = 0.5 + 0.5 * pop;
+  const rise = (1 - pop) * 36;
+  const tagFade = clamp01((g - 0.32) / 0.15);
+  const hintFade = awake ? 0 : clamp01((g - 0.55) / 0.2);
+
+  const mood = awake ? DUCK_PALETTE.awake : DUCK_PALETTE.dark;
+  const fillT = "fill 0.35s ease";
 
   return (
-    <svg viewBox="0 0 1000 320" className={className} width="100%" style={{ display: "block" }}>
-      {/* ground — a dark horizon line the trees root into */}
-      <g opacity={0.3 + 0.7 * groveGrowth}>
-        <path d="M0 300 Q500 288 1000 300 L1000 320 L0 320 Z" fill="rgba(10,5,4,0.55)" />
+    <svg viewBox="0 0 300 340" className={className} width="100%" style={{ display: "block", overflow: "visible" }}>
+      {/* ground shadow, settles in as the duck lands */}
+      <ellipse cx={150} cy={300} rx={100 * pop} ry={13} fill="rgba(10,5,4,0.5)" />
+
+      <g
+        transform={`translate(150, ${300 + rise}) scale(${scale}) translate(-150, -300)`}
+        opacity={clamp01(pop * 2.2)}
+        style={{
+          filter: awake
+            ? "drop-shadow(0 0 12px rgba(255,210,63,0.45))"
+            : "drop-shadow(0 0 6px rgba(226,72,58,0.28))",
+          transition: "filter 0.35s ease",
+        }}
+      >
+        <g
+          onClick={onActivate}
+          style={{ cursor: onActivate ? "pointer" : "default", pointerEvents: pop > 0.5 ? "auto" : "none" }}
+        >
+          {/* the classic rubber-duck silhouette: a rounded body with an
+              integrated tail bump, a raised head, and a forward bill —
+              built from one continuous outline so it reads as a single
+              clean shape, the way a vector duck icon does. */}
+          <path
+            d="M45 206
+               Q50 178 78 172
+               Q76 150 96 138
+               Q120 126 146 138
+               Q168 150 172 174
+               Q198 162 220 176
+               Q238 188 234 208
+               Q230 224 210 222
+               Q222 240 218 260
+               Q214 288 182 298
+               Q150 306 118 300
+               Q84 294 64 270
+               Q48 250 45 206 Z"
+            fill={mood.body}
+            stroke={mood.accent}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            style={{ transition: fillT }}
+          />
+
+          {/* open bill, a hair darker than the body */}
+          <path
+            d="M45 206 Q50 178 78 172 Q86 186 82 200 Q76 214 58 216 Q48 214 45 206 Z"
+            fill={mood.accent}
+            style={{ transition: fillT }}
+          />
+          <path d="M53 197 Q66 203 79 198" stroke={mood.body} strokeWidth={2} fill="none" strokeLinecap="round" style={{ transition: fillT }} />
+
+          {/* the one eye a side-profile duck gets */}
+          {awake ? (
+            <g>
+              <circle cx={100} cy={162} r={10} fill="#1a1002" />
+              <circle cx={103} cy={158} r={3} fill="#fff" />
+              <ellipse cx={82} cy={176} rx={9} ry={5.5} fill="#ff8a65" opacity={0.5} />
+            </g>
+          ) : (
+            <g style={{ animation: "sun-pulse 2.4s ease-in-out infinite" }}>
+              <circle cx={100} cy={162} r={8} fill="#ff3b2b" />
+            </g>
+          )}
+
+          {/* feet, peeking out from underneath */}
+          <ellipse cx={110} cy={298} rx={10} ry={5.5} fill={mood.accent} style={{ transition: fillT }} />
+          <ellipse cx={190} cy={298} rx={10} ry={5.5} fill={mood.accent} style={{ transition: fillT }} />
+
+          {/* laptop, tucked under the chin — drawn last so its glow reads over the belly */}
+          <path d="M68 300 L184 300 L194 308 L58 308 Z" fill={mood.accent} style={{ transition: fillT }} />
+          <rect x={80} y={250} width={92} height={58} rx={4} fill="#0d0605" stroke={mood.accent} strokeWidth={2} style={{ transition: fillT }} />
+          <rect x={86} y={256} width={80} height={46} rx={2} fill="#3a1010" />
+          <rect x={93} y={265} width={44} height={3} rx={1.5} fill="#e2483a" opacity={0.85} />
+          <rect x={93} y={274} width={58} height={3} rx={1.5} fill="#8a4a4a" opacity={0.75} />
+          <rect x={93} y={283} width={32} height={3} rx={1.5} fill="#e2483a" opacity={0.65} />
+        </g>
       </g>
 
-      {TREES.map((cfg, i) => (
-        <Tree key={i} cfg={cfg} g={g} />
-      ))}
+      {/* "ask me" hint — fades in once the duck has settled, gone once awake */}
+      <g opacity={hintFade} style={{ pointerEvents: "none" }}>
+        <rect x={58} y={86} width={114} height={26} rx={13} fill="#2a1210" stroke="#5c2620" strokeWidth={1.5} />
+        <text
+          x={115}
+          y={100}
+          dominantBaseline="central"
+          textAnchor="middle"
+          fontFamily={FONT}
+          fontSize={11.5}
+          fontWeight={700}
+          fill="#f3e3dc"
+        >
+          ask me something
+        </text>
+      </g>
 
-      {/* résumé tag planted at the tallest tree's root */}
+      {/* résumé tag, set down by the duck's feet */}
       <a
         href={resumeHref}
         target="_blank"
@@ -142,11 +173,11 @@ export function GrowingTrees({
         style={{ pointerEvents: tagFade > 0.6 ? "auto" : "none" }}
       >
         <g opacity={tagFade} style={{ cursor: "pointer" }}>
-          <rect x={TAG_TREE.x - 50} y={280} width={100} height={25} rx={12.5} fill="#2a1210" />
-          <rect x={TAG_TREE.x - 50} y={280} width={100} height={25} rx={12.5} fill="none" stroke="#5c2620" strokeWidth={1.5} />
+          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="#2a1210" />
+          <rect x={100} y={306} width={100} height={25} rx={12.5} fill="none" stroke="#5c2620" strokeWidth={1.5} />
           <text
-            x={TAG_TREE.x}
-            y={293}
+            x={150}
+            y={319}
             dominantBaseline="central"
             textAnchor="middle"
             fontFamily={FONT}
@@ -158,6 +189,33 @@ export function GrowingTrees({
           </text>
         </g>
       </a>
+    </svg>
+  );
+}
+
+/* ── DuckPeek — just the cute yellow head, poking up beside the chat
+   panel so the duck never gets buried under its own popup. ─────────── */
+
+export function DuckPeek({ size = 68, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      className={className}
+      style={{ display: "block", overflow: "visible" }}
+    >
+      <g className="bob">
+        {/* head, same profile silhouette as the big duck, just cropped to the head */}
+        <circle cx={64} cy={62} r={42} fill="#ffd23f" stroke="#f5a623" strokeWidth={2.5} />
+        {/* bill, pointing out to the side */}
+        <path d="M14 68 Q20 44 46 40 Q54 54 50 68 Q44 82 26 84 Q16 82 14 68 Z" fill="#f5a623" />
+        <path d="M22 60 Q34 66 46 61" stroke="#ffd23f" strokeWidth={2} fill="none" strokeLinecap="round" />
+        {/* the one eye */}
+        <circle cx={68} cy={48} r={9} fill="#1a1002" />
+        <circle cx={71.5} cy={44} r={2.8} fill="#fff" />
+        <ellipse cx={50} cy={62} rx={8} ry={5} fill="#ff8a65" opacity={0.5} />
+      </g>
     </svg>
   );
 }

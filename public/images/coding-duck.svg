@@ -1,0 +1,65 @@
+<svg
+  width="100%"
+  height="100%"
+  viewBox="0 0 800 800"
+  preserveAspectRatio="xMidYMid meet"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-labelledby="coding-duck-title coding-duck-desc"
+>
+  <title id="coding-duck-title">Coding Duck</title>
+  <desc id="coding-duck-desc">
+    A mysterious black silhouette of a duck hunched behind an open laptop, typing in the dark. Two small
+    red eyes glow above the screen, which casts a faint red light upward and shows minimal red code
+    symbols — a hidden, hacker-like mascot.
+  </desc>
+
+  <defs>
+    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#b8241a" stop-opacity="0.32" />
+      <stop offset="45%" stop-color="#7a1712" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#7a1712" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="screenGlow" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#4a120e" stop-opacity="1" />
+      <stop offset="60%" stop-color="#1c0906" stop-opacity="1" />
+      <stop offset="100%" stop-color="#0c0504" stop-opacity="1" />
+    </radialGradient>
+  </defs>
+
+  <!-- ambient light the screen throws up into the dark -->
+  <ellipse cx="400" cy="330" rx="190" ry="230" fill="url(#ambientGlow)" />
+
+  <!-- the duck: a hunched, near-black silhouette peeking above the laptop -->
+  <ellipse cx="400" cy="372" rx="150" ry="136" fill="#080706" />
+
+  <!-- beak, flat and geometric, the one detail that says "duck" -->
+  <path d="M354 380 Q354 360 400 358 Q446 360 446 380 Q446 396 400 398 Q354 396 354 380 Z" fill="#3a1712" />
+  <line x1="360" y1="380" x2="440" y2="380" stroke="#080706" stroke-width="2.5" opacity="0.75" />
+
+  <!-- eyes — the brightest thing in the scene -->
+  <g>
+    <circle cx="367" cy="318" r="25" fill="#ff2a1a" opacity="0.16" />
+    <circle cx="367" cy="318" r="16" fill="#ff2a1a" opacity="0.38" />
+    <circle cx="367" cy="318" r="8.5" fill="#ff3b28" />
+    <circle cx="369" cy="315" r="2.4" fill="#ffcfc2" />
+
+    <circle cx="433" cy="318" r="25" fill="#ff2a1a" opacity="0.16" />
+    <circle cx="433" cy="318" r="16" fill="#ff2a1a" opacity="0.38" />
+    <circle cx="433" cy="318" r="8.5" fill="#ff3b28" />
+    <circle cx="435" cy="315" r="2.4" fill="#ffcfc2" />
+  </g>
+
+  <!-- laptop screen, facing the viewer, glowing from within -->
+  <rect x="288" y="400" width="224" height="172" rx="10" fill="#0c0504" stroke="#3a1412" stroke-width="3" />
+  <rect x="298" y="410" width="204" height="152" rx="6" fill="url(#screenGlow)" />
+
+  <!-- minimal code glyphs, dim and unreadable-close, just enough to say "code" -->
+  <text x="400" y="452" text-anchor="middle" font-family="'Courier New', monospace" font-size="30" font-weight="700" fill="#b8362a" opacity="0.85">&lt;/&gt;</text>
+  <text x="400" y="492" text-anchor="middle" font-family="'Courier New', monospace" font-size="28" font-weight="700" fill="#8f2a20" opacity="0.7">{ }</text>
+  <text x="400" y="530" text-anchor="middle" font-family="'Courier New', monospace" font-size="26" font-weight="700" fill="#b8362a" opacity="0.55">_</text>
+
+  <!-- laptop base, flat and minimal -->
+  <path d="M270 572 L530 572 L556 602 L244 602 Z" fill="#0a0908" />
+  <path d="M272 572 L528 572" stroke="#241412" stroke-width="2" opacity="0.6" />
+</svg>

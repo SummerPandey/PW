@@ -4,7 +4,8 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { C, FONT, SERIF, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
-import { BootScreen, Confetti, Toast, Clock, Sprout, GrowingTrees, useKonami } from "./fx";
+import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami } from "./fx";
+import { DuckChat } from "./DuckChat";
 
 export type { Panel } from "./theme";
 
@@ -14,7 +15,7 @@ export type { Panel } from "./theme";
    Three full-screen panels sit side by side in a horizontal,
    snap-scrolling track:  [ About | Welcome | Works ].
    The site opens centered on Welcome, where scrolling down grows
-   a treeline; the clouds up top navigate left and right.
+   a coding duck; the clouds up top navigate left and right.
    ──────────────────────────────────────────────────────────────────── */
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -135,7 +136,7 @@ function CloudPuff({ label }: { label?: string }) {
 }
 
 /* ── CloudBank — big overlapping clouds clustered across the top ─────
-   They drift in as the treeline grows (g → 1). A few tuck behind
+   They drift in as the duck pops in (g → 1). A few tuck behind
    the sun; the two labelled front clouds are the About/Works nav. ── */
 
 type Cloud = {
@@ -312,12 +313,22 @@ function LightFall() {
 }
 
 /* ── Welcome — the center landing panel ──────────────────────────────
-   Scrolling down (p: 0 → 1) grows a treeline while the sun rises
+   Scrolling down (p: 0 → 1) pops in a coding duck while the sun rises
    and brightens and the headline fades away. The panel is 240vh
    tall with a sticky viewport, so the scene stays put while the
    scroll drives the animation. ──────────────────────────────────── */
 
-function Welcome({ goTo, p }: { goTo: (p: Panel) => void; p: number }) {
+function Welcome({
+  goTo,
+  p,
+  duckAwake,
+  onDuckClick,
+}: {
+  goTo: (p: Panel) => void;
+  p: number;
+  duckAwake: boolean;
+  onDuckClick: () => void;
+}) {
   const g = clamp01(p);
   return (
     <div style={{ height: "240vh", position: "relative" }}>
@@ -355,7 +366,7 @@ function Welcome({ goTo, p }: { goTo: (p: Panel) => void; p: number }) {
         {/* clouds cluster in as you scroll; the labelled ones navigate */}
         <CloudBank g={g} goTo={goTo} />
 
-        {/* headline — fades fully away as the treeline takes over */}
+        {/* headline — fades fully away as the duck takes over */}
         <div
           style={{
             position: "relative",
@@ -392,24 +403,24 @@ function Welcome({ goTo, p }: { goTo: (p: Panel) => void; p: number }) {
                 color: "transparent",
               }}
             >
-  darkroom of ideas
+  room of ideas
             </span>
           </h1>
         </div>
 
-        {/* the growing treeline — its tallest tree's root links the résumé */}
+        {/* the coding duck — sits back behind the headline; its feet link the résumé */}
         <div
           style={{
             position: "absolute",
             bottom: "0",
             left: "50%",
             transform: "translateX(-50%)",
-            width: "min(1600px, 98vw)",
-            zIndex: 4,
+            width: "min(360px, 70vw)",
+            zIndex: 1,
             pointerEvents: "none",
           }}
         >
-          <GrowingTrees p={g} resumeHref="/Summer_Pandey_Resume.pdf" />
+          <CodingDuck p={g} awake={duckAwake} onActivate={onDuckClick} resumeHref="/Summer_Pandey_Resume.pdf" />
         </div>
 
         {/* scroll cue — only before you start scrolling, then gone */}
@@ -442,9 +453,10 @@ export function Portfolio() {
   const [confetti, setConfetti] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [active, setActive] = useState<Panel>("welcome");
+  const [duckChatOpen, setDuckChatOpen] = useState(false);
 
-  /* Treeline growth. The welcome panel's scroll position is the
-     target; an rAF loop eases toward it so the flower glides instead
+  /* Duck growth. The welcome panel's scroll position is the
+     target; an rAF loop eases toward it so the duck glides in instead
      of snapping per wheel-notch. */
   const [growth, setGrowth] = useState(0);
   const targetRef = useRef(0);
@@ -564,6 +576,7 @@ export function Portfolio() {
       <CursorGlow />
       <Confetti active={confetti} />
       <Toast text={toast} />
+      <DuckChat open={duckChatOpen} onClose={() => setDuckChatOpen(false)} />
 
       {/* ── global top bar ── */}
       <nav
@@ -624,7 +637,12 @@ export function Portfolio() {
           <AboutPage goTo={goTo} />
         </section>
         <section id="panel-welcome" ref={welcomeRef} style={panelStyle}>
-          <Welcome goTo={goTo} p={growth} />
+          <Welcome
+            goTo={goTo}
+            p={growth}
+            duckAwake={duckChatOpen}
+            onDuckClick={() => setDuckChatOpen(true)}
+          />
         </section>
         <section id="panel-works" style={panelStyle}>
           <WorkPage goTo={goTo} />

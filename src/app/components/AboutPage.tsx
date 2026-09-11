@@ -81,18 +81,20 @@ const MOTTOS = ["Try things, see what happens", "Push ideas forward", "Just give
 
 // Compact skill set — shown as chips so the whole page fits one screen.
 const SKILLS = [
-  "Python", "Java", "C", "JavaScript", "TypeScript", "Dart", "SQL",
-  "React", "Flutter", "Node.js", "Express.js", "Firebase", "Supabase",
-  "PyTorch", "TensorFlow", "scikit-learn", "Docker", "Git",
+  "Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart",
+  "React", "Node.js", "Express.js", "Flutter",
+  "AWS", "PostgreSQL", "Supabase", "Firebase", "MongoDB",
+  "Docker", "Kubernetes", "Git",
+  "PyTorch", "TensorFlow", "scikit-learn", "NVIDIA Jetson", "Gemini API",
 ];
 
 // Gamified résumé metrics (the trophy badge is rendered separately).
 const WINS = [
   "1K+ calls / week",
-  "+25% engagement",
-  "200+ mentored",
-  "−15% failure rate",
-  "40% faster logging",
+  "+25% call completion",
+  "−15% system failures",
+  "200+ students mentored",
+  "50+ students taught",
 ];
 
 const SOCIALS = [
@@ -119,21 +121,46 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
               padding: "20px 26px",
             }}
           >
-            {/* sun-glow + swaying sprout */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* sun-glow + swaying sprout, plus a placeholder monogram avatar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div
+                  style={{
+                    width: "30px",
+                    height: "30px",
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle, #ff8a65, #e2483a)",
+                    boxShadow: "0 0 22px rgba(226,72,58,0.55)",
+                    animation: "sun-pulse 3s ease-in-out infinite",
+                  }}
+                />
+                <span className="sway" style={{ display: "inline-flex" }}>
+                  <Sprout size={26} />
+                </span>
+              </div>
+              {/* placeholder avatar — swap for a real headshot later */}
               <div
+                aria-label="Photo placeholder — swap for a headshot"
+                title="Placeholder — swap for a headshot"
                 style={{
-                  width: "30px",
-                  height: "30px",
+                  width: "52px",
+                  height: "52px",
                   borderRadius: "50%",
-                  background: "radial-gradient(circle, #ff8a65, #e2483a)",
-                  boxShadow: "0 0 22px rgba(226,72,58,0.55)",
-                  animation: "sun-pulse 3s ease-in-out infinite",
+                  background: "linear-gradient(150deg, #e2483a, #7a1e14)",
+                  border: "1.5px dashed rgba(255,220,210,0.4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: SERIF,
+                  fontWeight: 600,
+                  fontSize: "18px",
+                  color: C.cream,
+                  letterSpacing: "0.02em",
+                  flexShrink: 0,
                 }}
-              />
-              <span className="sway" style={{ display: "inline-flex" }}>
-                <Sprout size={26} />
-              </span>
+              >
+                SP
+              </div>
             </div>
 
             <div>

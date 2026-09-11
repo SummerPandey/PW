@@ -16,6 +16,7 @@ import {
   CircleDot,
   TrendingUp,
   Trophy,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
@@ -62,9 +63,23 @@ type Project = {
 
 const PROJECTS: Project[] = [
   {
+    title: "Argus",
+    icon: ShieldCheck,
+    desc: "A privacy-by-design operating-room CV system: all video processed on an NVIDIA Jetson, connected to a serverless AWS backend, so medical footage never leaves the device. Detects 4 safety events with human-in-the-loop review.",
+    grad: "linear-gradient(150deg, #4a7a5c, #14361f)",
+    tags: [
+      { label: "python", tone: "leaf" },
+      { label: "aws", tone: "sun" },
+      { label: "jetson", tone: "teal" },
+    ],
+    link: "https://github.com/SummerPandey",
+    linkIcon: "github",
+    cats: ["AI/ML", "Backend"],
+  },
+  {
     title: "VentureGain",
     icon: Activity,
-    desc: "A full-stack health-tracking dashboard used by 20+ users — workouts, nutrition, sleep, energy & hydration in one place, with photo/voice/text logging.",
+    desc: "A full-stack health-tracking dashboard used by 20+ users — workouts, nutrition, sleep, energy & hydration in one place, with photo/voice/text logging normalized into a PostgreSQL/JSONB schema with per-user row-level security.",
     grad: "linear-gradient(150deg, #c0453a, #5c1414)",
     tags: [
       { label: "react", tone: "leaf" },
@@ -93,7 +108,7 @@ const PROJECTS: Project[] = [
     title: "Preventia",
     icon: Stethoscope,
     award: "Best Use of Gemini AI",
-    desc: "A Flutter app for preventive care: personalized health checklists by age, gender & local disease data, with a live leaderboard.",
+    desc: "Won Best Use of Gemini AI at HackAugie — a Flutter app that generates personalized preventive-health checklists from demographic and regional risk factors, with Firebase-powered gamified tracking and leaderboards.",
     grad: "linear-gradient(150deg, #b23a3a, #6b1f1f)",
     tags: [
       { label: "flutter", tone: "teal" },
@@ -209,9 +224,11 @@ const TABS: Filter[] = [
 ];
 
 const SKILLS = [
-  "Python", "Java", "C", "JavaScript", "TypeScript", "Dart", "SQL",
-  "React", "Flutter", "Node.js", "Express.js", "Firebase", "Supabase",
-  "PyTorch", "TensorFlow", "scikit-learn", "Docker", "Git",
+  "Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart",
+  "React", "Node.js", "Express.js", "Flutter",
+  "AWS", "PostgreSQL", "Supabase", "Firebase", "MongoDB",
+  "Docker", "Kubernetes", "Git",
+  "PyTorch", "TensorFlow", "scikit-learn", "NVIDIA Jetson", "Gemini API",
 ];
 
 function countFor(filter: Filter) {
@@ -442,7 +459,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   NVIDIA AI &amp; Machine Learning Instructor
                 </div>
                 <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(243,222,210,0.6)", marginTop: "3px" }}>
-                  iD Tech at Stanford University · Jun 2026 – Aug 2026
+                  iD Tech at Stanford University · Jun 2026 – Present
                 </div>
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
                   Software Engineering Intern
@@ -459,7 +476,7 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                 Augustana College
               </div>
               <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "4px", lineHeight: 1.6 }}>
-                B.A. Computer Science &amp; Data Science · Minor in Math (2023–2027)
+                B.A. Computer Science &amp; Data Science · Minor in Math · Expected 05/2027
               </div>
               <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "10px", lineHeight: 1.6 }}>
                 Community Advisor · Google Dev Group Co-Lead — mentored 200+ students, ran workshops &amp; hackathons.
