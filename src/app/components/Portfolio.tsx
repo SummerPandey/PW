@@ -329,6 +329,10 @@ const DUCK_MAX_PCT = 92;
     enough that a stray flick of the wheel can't navigate for you. */
 const EDGE_HOLD_MS = 560;
 
+/** The duck outruns your cursor a little when dragged, so crossing the
+    water doesn't take a swipe the full width of the screen. */
+const DRAG_GAIN = 1.7;
+
 function WaterDuck({
   g,
   duckAwake,
@@ -433,7 +437,7 @@ function WaterDuck({
     if (!draggingRef.current || !waterRef.current) return;
     const dx = e.clientX - dragStartXRef.current;
     if (Math.abs(dx) > 4) dragMovedRef.current = true;
-    const pct = (dx / waterRef.current.clientWidth) * 100;
+    const pct = (dx / waterRef.current.clientWidth) * 100 * DRAG_GAIN;
     move(dragStartPosRef.current + pct);
   };
 
