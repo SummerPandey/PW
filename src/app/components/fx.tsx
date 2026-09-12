@@ -46,12 +46,15 @@ export function CodingDuck({
   onActivate,
   className,
   resumeHref,
+  facing = "right",
 }: {
   p: number;
   awake?: boolean;
   onActivate?: () => void;
   className?: string;
   resumeHref?: string;
+  /** Which way the duck is paddling — mirrors just the pixel art, not the hint/tag text. */
+  facing?: "left" | "right";
 }) {
   const g = clamp01(p);
   const pop = clamp01((g - 0.05) / 0.4); // pop-in with a little overshoot
@@ -80,7 +83,9 @@ export function CodingDuck({
           style={{ cursor: onActivate ? "pointer" : "default", pointerEvents: pop > 0.5 ? "auto" : "none" }}
         >
           {/* the real duck — pixel art, standing in for the old hand-drawn silhouette */}
-          <image href="/images/duck-pixel.png" x={45} y={106} width={190} height={200} style={{ imageRendering: "pixelated" }} />
+          <g transform={facing === "left" ? "translate(280,0) scale(-1,1)" : undefined}>
+            <image href="/images/duck-pixel.png" x={45} y={106} width={190} height={200} style={{ imageRendering: "pixelated" }} />
+          </g>
         </g>
       </g>
 
@@ -148,6 +153,19 @@ export function DuckPeek({ size = 68, className }: { size?: number; className?: 
       </div>
     </div>
   );
+}
+
+/** True when the visitor's OS asks for reduced motion. */
+export function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
 }
 
 /* ── Clock — live HH:MM:SS with a gently floating green dot ──────────

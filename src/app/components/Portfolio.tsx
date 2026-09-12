@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { C, FONT, SERIF, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
-import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami } from "./fx";
+import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami, usePrefersReducedMotion } from "./fx";
 import { DuckChat } from "./DuckChat";
 
 export type { Panel } from "./theme";
@@ -318,6 +318,260 @@ function LightFall() {
    tall with a sticky viewport, so the scene stays put while the
    scroll drives the animation. ──────────────────────────────────── */
 
+/* ── WaterDuck — the duck floats on the water strip and can be pushed
+   left/right by wheel, drag, touch, or arrow keys. Purely a toy: it
+   doesn't navigate anywhere, it just paddles around. ─────────────── */
+
+const DUCK_MIN_PCT = 8;
+const DUCK_MAX_PCT = 92;
+
+function WaterDuck({
+  g,
+  duckAwake,
+  onDuckClick,
+  goTo,
+}: {
+  g: number;
+  duckAwake: boolean;
+  onDuckClick: () => void;
+  goTo: (p: Panel) => void;
+}) {
+  const reducedMotion = usePrefersReducedMotion();
+  const waterRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState(50);
+  const [facing, setFacing] = useState<"left" | "right">("right");
+  const [dragging, setDragging] = useState(false);
+  const posRef = useRef(50);
+  const dragStartXRef = useRef(0);
+  const dragStartPosRef = useRef(50);
+  const dragMovedRef = useRef(false);
+  const draggingRef = useRef(false);
+  const edgeTriggeredRef = useRef(false);
+
+  const move = useCallback(
+    (next: number) => {
+      const clamped = Math.max(DUCK_MIN_PCT, Math.min(DUCK_MAX_PCT, next));
+      setFacing((f) => (clamped > posRef.current ? "right" : clamped < posRef.current ? "left" : f));
+      posRef.current = clamped;
+      setPos(clamped);
+
+      // Paddle all the way to an edge and the duck carries you to that page.
+      if (clamped <= DUCK_MIN_PCT || clamped >= DUCK_MAX_PCT) {
+        if (!edgeTriggeredRef.current) {
+          edgeTriggeredRef.current = true;
+          const target = clamped <= DUCK_MIN_PCT ? "about" : "works";
+          setTimeout(() => goTo(target), 200);
+        }
+      } else {
+        edgeTriggeredRef.current = false;
+      }
+    },
+    [goTo]
+  );
+
+  // React's synthetic onWheel is passive, so preventDefault() there is a no-op —
+  // attach a real listener so scrolling over the water moves the duck instead
+  // of scrolling the page, while the rest of the page scrolls normally.
+  useEffect(() => {
+    const el = waterRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      move(posRef.current + delta * 0.06);
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, [move]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    draggingRef.current = true;
+    setDragging(true);
+    dragMovedRef.current = false;
+    dragStartXRef.current = e.clientX;
+    dragStartPosRef.current = posRef.current;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // synthetic/test pointer ids can't be captured — dragging still works via the move handler
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingRef.current || !waterRef.current) return;
+    const dx = e.clientX - dragStartXRef.current;
+    if (Math.abs(dx) > 4) dragMovedRef.current = true;
+    const pct = (dx / waterRef.current.clientWidth) * 100;
+    move(dragStartPosRef.current + pct);
+  };
+
+  const endDrag = () => {
+    draggingRef.current = false;
+    setDragging(false);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      move(posRef.current - 4);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      move(posRef.current + 4);
+    }
+  };
+
+  const handleActivate = () => {
+    if (dragMovedRef.current) {
+      dragMovedRef.current = false;
+      return;
+    }
+    onDuckClick();
+  };
+
+  return (
+    <div
+      ref={waterRef}
+      tabIndex={0}
+      role="group"
+      aria-label="The duck — scroll, drag, or use the arrow keys to move it across the water"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onKeyDown={onKeyDown}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: "clamp(160px, 26vw, 260px)",
+        zIndex: 0,
+        opacity: clamp01((g - 0.1) / 0.3),
+        transition: "opacity 0.6s ease",
+        touchAction: "none",
+        outline: "none",
+        cursor: dragging ? "grabbing" : "grab",
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/moonlit-pixel-water.png"
+        alt=""
+        draggable={false}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          objectPosition: "center bottom",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      />
+
+      {/* ripple, right under the duck's feet */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          bottom: "30%",
+          left: `${pos}%`,
+          transform: "translate(-50%, 50%)",
+          width: "70px",
+          height: "14px",
+          borderRadius: "50%",
+          background: "radial-gradient(ellipse at center, rgba(255,255,255,0.28), rgba(255,255,255,0) 70%)",
+          pointerEvents: "none",
+          animation: reducedMotion ? undefined : "ripple-pulse 2.6s ease-in-out infinite",
+        }}
+      />
+
+      {/* left/right hints — flank the duck and nudge it the same way a key
+          press does, so it's obvious at a glance what to do */}
+      <button
+        aria-label="Nudge the duck left, toward About me"
+        onClick={() => move(posRef.current - 10)}
+        style={{
+          position: "absolute",
+          bottom: "24%",
+          left: `${pos}%`,
+          transform: "translate(calc(-50% - 96px), 50%)",
+          transition: dragging ? "none" : "left 0.14s linear",
+          width: "38px",
+          height: "38px",
+          borderRadius: "50%",
+          border: `2px solid ${C.leaf}`,
+          background: "rgba(8,9,9,0.55)",
+          color: C.leaf,
+          fontSize: "16px",
+          fontWeight: 700,
+          lineHeight: 1,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: clamp01((g - 0.3) / 0.2),
+          zIndex: 2,
+        }}
+      >
+        ←
+      </button>
+      <button
+        aria-label="Nudge the duck right, toward My work"
+        onClick={() => move(posRef.current + 10)}
+        style={{
+          position: "absolute",
+          bottom: "24%",
+          left: `${pos}%`,
+          transform: "translate(calc(-50% + 96px), 50%)",
+          transition: dragging ? "none" : "left 0.14s linear",
+          width: "38px",
+          height: "38px",
+          borderRadius: "50%",
+          border: `2px solid ${C.leaf}`,
+          background: "rgba(8,9,9,0.55)",
+          color: C.leaf,
+          fontSize: "16px",
+          fontWeight: 700,
+          lineHeight: 1,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: clamp01((g - 0.3) / 0.2),
+          zIndex: 2,
+        }}
+      >
+        →
+      </button>
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "24%",
+          left: `${pos}%`,
+          width: "min(190px, 38vw)",
+          transform: "translateX(-50%)",
+          transition: dragging ? "none" : "left 0.14s linear",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      >
+        <div className={reducedMotion ? undefined : "duck-bob"} style={{ pointerEvents: "auto" }}>
+          <CodingDuck
+            p={g}
+            awake={duckAwake}
+            onActivate={handleActivate}
+            facing={facing}
+            resumeHref="/Summer_Pandey_Resume.pdf"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Welcome({
   goTo,
   p,
@@ -408,20 +662,8 @@ function Welcome({
           </h1>
         </div>
 
-        {/* the coding duck — sits back behind the headline; its feet link the résumé */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "min(360px, 70vw)",
-            zIndex: 1,
-            pointerEvents: "none",
-          }}
-        >
-          <CodingDuck p={g} awake={duckAwake} onActivate={onDuckClick} resumeHref="/Summer_Pandey_Resume.pdf" />
-        </div>
+        {/* water — the duck floats here and can be dragged/scrolled/keyed around */}
+        <WaterDuck g={g} duckAwake={duckAwake} onDuckClick={onDuckClick} goTo={goTo} />
 
         {/* scroll cue — only before you start scrolling, then gone */}
         <div
