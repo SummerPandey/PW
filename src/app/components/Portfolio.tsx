@@ -319,22 +319,28 @@ function LightFall() {
    scroll drives the animation. ──────────────────────────────────── */
 
 /* ── WaterDuck — the duck floats on the water strip and can be pushed
-   left/right by wheel, drag, touch, or arrow keys. Purely a toy: it
-   doesn't navigate anywhere, it just paddles around. ─────────────── */
+   left/right by wheel, drag, touch, or arrow keys. Hold it against an
+   edge and it paddles off to that page. ──────────────────────────── */
 
 const DUCK_MIN_PCT = 8;
 const DUCK_MAX_PCT = 92;
+
+/** How long the duck has to lean on an edge before it sets off. Long
+    enough that a stray flick of the wheel can't navigate for you. */
+const EDGE_HOLD_MS = 560;
 
 function WaterDuck({
   g,
   duckAwake,
   onDuckClick,
   goTo,
+  active,
 }: {
   g: number;
   duckAwake: boolean;
   onDuckClick: () => void;
   goTo: (p: Panel) => void;
+  active: Panel;
 }) {
   const reducedMotion = usePrefersReducedMotion();
   const waterRef = useRef<HTMLDivElement>(null);
@@ -346,28 +352,34 @@ function WaterDuck({
   const dragStartPosRef = useRef(50);
   const dragMovedRef = useRef(false);
   const draggingRef = useRef(false);
-  const edgeTriggeredRef = useRef(false);
+  const [atEdge, setAtEdge] = useState<Panel | null>(null);
 
-  const move = useCallback(
-    (next: number) => {
-      const clamped = Math.max(DUCK_MIN_PCT, Math.min(DUCK_MAX_PCT, next));
-      setFacing((f) => (clamped > posRef.current ? "right" : clamped < posRef.current ? "left" : f));
-      posRef.current = clamped;
-      setPos(clamped);
+  const move = useCallback((next: number) => {
+    const clamped = Math.max(DUCK_MIN_PCT, Math.min(DUCK_MAX_PCT, next));
+    setFacing((f) => (clamped > posRef.current ? "right" : clamped < posRef.current ? "left" : f));
+    posRef.current = clamped;
+    setPos(clamped);
+    setAtEdge(clamped <= DUCK_MIN_PCT ? "about" : clamped >= DUCK_MAX_PCT ? "works" : null);
+  }, []);
 
-      // Paddle all the way to an edge and the duck carries you to that page.
-      if (clamped <= DUCK_MIN_PCT || clamped >= DUCK_MAX_PCT) {
-        if (!edgeTriggeredRef.current) {
-          edgeTriggeredRef.current = true;
-          const target = clamped <= DUCK_MIN_PCT ? "about" : "works";
-          setTimeout(() => goTo(target), 200);
-        }
-      } else {
-        edgeTriggeredRef.current = false;
-      }
-    },
-    [goTo]
-  );
+  // Leaning on an edge sets off on the trip; pull away and it's called off.
+  // A timer rather than an rAF ramp, so a throttled tab can't strand the
+  // duck mid-charge — the bar below is animated by CSS to match.
+  useEffect(() => {
+    if (!atEdge) return;
+    const trip = setTimeout(() => goTo(atEdge), EDGE_HOLD_MS);
+    return () => clearTimeout(trip);
+  }, [atEdge, goTo]);
+
+  // Once you've left the welcome panel, float the duck back to the middle
+  // so you don't come back to it parked against an edge, one nudge from
+  // sending you away again.
+  useEffect(() => {
+    if (active === "welcome") return;
+    posRef.current = 50;
+    setPos(50);
+    setAtEdge(null);
+  }, [active]);
 
   // React's synthetic onWheel is passive, so preventDefault() there is a no-op —
   // attach a real listener so scrolling over the water moves the duck instead
@@ -378,7 +390,9 @@ function WaterDuck({
     const handler = (e: WheelEvent) => {
       e.preventDefault();
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      move(posRef.current + delta * 0.06);
+      // Capped per notch so one hard trackpad flick can't shoot the duck
+      // from the middle straight into an edge.
+      move(posRef.current + Math.max(-3, Math.min(3, delta * 0.035)));
     };
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
@@ -428,12 +442,21 @@ function WaterDuck({
     onDuckClick();
   };
 
+  /* Which shore the duck is drifting toward, and how close it is — drives
+     the little destination sign above its head. */
+  const heading =
+    pos <= 32
+      ? { side: "left" as const, label: "About me", nearness: clamp01((32 - pos) / 22) }
+      : pos >= 68
+        ? { side: "right" as const, label: "My work", nearness: clamp01((pos - 68) / 22) }
+        : null;
+
   return (
     <div
       ref={waterRef}
       tabIndex={0}
       role="group"
-      aria-label="The duck — scroll, drag, or use the arrow keys to move it across the water"
+      aria-label="The duck — scroll, drag, or use the arrow keys to paddle it across the water; hold it against the left edge for About me, the right edge for My work"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -558,6 +581,52 @@ function WaterDuck({
           zIndex: 1,
         }}
       >
+        {/* where this heading takes you — fades in as the duck nears an
+            edge, then fills while it leans on it */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            bottom: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            marginBottom: "8px",
+            width: "112px",
+            padding: "6px 8px 5px",
+            borderRadius: "10px",
+            background: "rgba(8,9,9,0.82)",
+            border: `1px solid ${atEdge ? C.leaf : C.border}`,
+            opacity: heading ? 0.3 + 0.7 * heading.nearness : 0,
+            transition: "opacity 0.25s ease, border-color 0.25s ease",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "10.5px",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textAlign: "center",
+              color: atEdge ? C.leaf : C.moss,
+              transition: "color 0.25s ease",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {heading?.side === "left" ? `← ${heading.label}` : `${heading?.label} →`}
+          </div>
+          <div style={{ height: "3px", marginTop: "5px", borderRadius: "2px", background: "rgba(255,249,232,0.14)" }}>
+            <div
+              style={{
+                height: "100%",
+                width: atEdge ? "100%" : "0%",
+                borderRadius: "2px",
+                background: C.leaf,
+                transition: atEdge ? `width ${EDGE_HOLD_MS}ms linear` : "width 0.18s ease-out",
+              }}
+            />
+          </div>
+        </div>
+
         <div className={reducedMotion ? undefined : "duck-bob"} style={{ pointerEvents: "auto" }}>
           <CodingDuck
             p={g}
@@ -577,11 +646,13 @@ function Welcome({
   p,
   duckAwake,
   onDuckClick,
+  active,
 }: {
   goTo: (p: Panel) => void;
   p: number;
   duckAwake: boolean;
   onDuckClick: () => void;
+  active: Panel;
 }) {
   const g = clamp01(p);
   return (
@@ -663,7 +734,7 @@ function Welcome({
         </div>
 
         {/* water — the duck floats here and can be dragged/scrolled/keyed around */}
-        <WaterDuck g={g} duckAwake={duckAwake} onDuckClick={onDuckClick} goTo={goTo} />
+        <WaterDuck g={g} duckAwake={duckAwake} onDuckClick={onDuckClick} goTo={goTo} active={active} />
 
         {/* scroll cue — only before you start scrolling, then gone */}
         <div
@@ -884,6 +955,7 @@ export function Portfolio() {
             p={growth}
             duckAwake={duckChatOpen}
             onDuckClick={() => setDuckChatOpen(true)}
+            active={active}
           />
         </section>
         <section id="panel-works" style={panelStyle}>
