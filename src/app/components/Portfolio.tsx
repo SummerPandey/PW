@@ -381,6 +381,24 @@ function WaterDuck({
     setAtEdge(null);
   }, [active]);
 
+  // The duck watches the cursor, so it turns to look at you instead of
+  // staring off one way until someone happens to paddle it.
+  useEffect(() => {
+    if (active !== "welcome") return;
+    const el = waterRef.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      if (draggingRef.current) return; // mid-drag, the direction of travel wins
+      const rect = el.getBoundingClientRect();
+      const duckX = rect.left + (posRef.current / 100) * rect.width;
+      const dx = e.clientX - duckX;
+      if (Math.abs(dx) < 24) return; // dead zone, so it can't dither overhead
+      setFacing(dx > 0 ? "right" : "left"); // same value re-renders nothing
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [active]);
+
   // React's synthetic onWheel is passive, so preventDefault() there is a no-op —
   // attach a real listener so scrolling over the water moves the duck instead
   // of scrolling the page, while the rest of the page scrolls normally.
