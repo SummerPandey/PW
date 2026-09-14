@@ -404,17 +404,18 @@ function WaterDuck({
   }, [active]);
 
   // React's synthetic onWheel is passive, so preventDefault() there is a no-op —
-  // attach a real listener so scrolling over the water moves the duck instead
-  // of scrolling the page, while the rest of the page scrolls normally.
+  // attach a real listener so a horizontal swipe over the water paddles the
+  // duck. Vertical wheel/scroll is left alone so the page still scrolls
+  // normally when the cursor happens to be over the duck.
   useEffect(() => {
     const el = waterRef.current;
     if (!el) return;
     const handler = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scroll — let the page handle it
       e.preventDefault();
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       // Capped per notch so one hard trackpad flick can't shoot the duck
       // from the middle straight into an edge.
-      move(posRef.current + Math.max(-3, Math.min(3, delta * 0.035)));
+      move(posRef.current + Math.max(-3, Math.min(3, e.deltaX * 0.035)));
     };
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
@@ -532,11 +533,11 @@ function WaterDuck({
         }}
       />
 
-      {/* left/right hints — flank the duck and nudge it the same way a key
-          press does, so it's obvious at a glance what to do */}
+      {/* left/right hints — flank the duck. A click takes you straight
+          there, same as leaning the duck against that edge would. */}
       <button
-        aria-label="Nudge the duck left, toward About me"
-        onClick={() => move(posRef.current - 10)}
+        aria-label="Go to About me"
+        onClick={() => goTo("about")}
         style={{
           position: "absolute",
           bottom: "24%",
@@ -563,8 +564,8 @@ function WaterDuck({
         ←
       </button>
       <button
-        aria-label="Nudge the duck right, toward My work"
-        onClick={() => move(posRef.current + 10)}
+        aria-label="Go to My work"
+        onClick={() => goTo("works")}
         style={{
           position: "absolute",
           bottom: "24%",
