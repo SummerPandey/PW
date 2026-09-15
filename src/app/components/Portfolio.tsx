@@ -537,7 +537,10 @@ function WaterDuck({
           there, same as leaning the duck against that edge would. */}
       <button
         aria-label="Go to About me"
-        onClick={() => goTo("about")}
+        onClick={() => {
+          setFacing("left");
+          goTo("about");
+        }}
         style={{
           position: "absolute",
           bottom: "24%",
@@ -565,7 +568,10 @@ function WaterDuck({
       </button>
       <button
         aria-label="Go to My work"
-        onClick={() => goTo("works")}
+        onClick={() => {
+          setFacing("right");
+          goTo("works");
+        }}
         style={{
           position: "absolute",
           bottom: "24%",
