@@ -453,15 +453,24 @@ function WaterDuck({
     setDragging(false);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      move(posRef.current - 4);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      move(posRef.current + 4);
-    }
-  };
+  // Arrow keys paddle the duck as soon as you're back on the welcome panel —
+  // no need to click it first to give it focus.
+  useEffect(() => {
+    if (active !== "welcome" || duckAwake) return;
+    const onWindowKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        move(posRef.current - 4);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        move(posRef.current + 4);
+      }
+    };
+    window.addEventListener("keydown", onWindowKey);
+    return () => window.removeEventListener("keydown", onWindowKey);
+  }, [active, duckAwake, move]);
 
   const handleActivate = () => {
     if (dragMovedRef.current) {
@@ -490,7 +499,6 @@ function WaterDuck({
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
-      onKeyDown={onKeyDown}
       style={{
         position: "absolute",
         bottom: 0,
