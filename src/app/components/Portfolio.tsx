@@ -421,23 +421,29 @@ function WaterDuck({
     return () => el.removeEventListener("wheel", handler);
   }, [move]);
 
+  // Pointer capture is deferred until movement actually happens — grabbing it
+  // on pointerdown itself retargets the pointerup/click that follows a plain
+  // click to this div instead of whatever was under the cursor (the duck's
+  // own onClick), which silently ate every click-to-chat.
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     draggingRef.current = true;
     setDragging(true);
     dragMovedRef.current = false;
     dragStartXRef.current = e.clientX;
     dragStartPosRef.current = posRef.current;
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // synthetic/test pointer ids can't be captured — dragging still works via the move handler
-    }
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current || !waterRef.current) return;
     const dx = e.clientX - dragStartXRef.current;
-    if (Math.abs(dx) > 4) dragMovedRef.current = true;
+    if (Math.abs(dx) > 4 && !dragMovedRef.current) {
+      dragMovedRef.current = true;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // synthetic/test pointer ids can't be captured — dragging still works via this handler
+      }
+    }
     const pct = (dx / waterRef.current.clientWidth) * 100 * DRAG_GAIN;
     move(dragStartPosRef.current + pct);
   };
