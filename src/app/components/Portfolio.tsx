@@ -205,7 +205,10 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
               position: "absolute",
               left: `${cloud.x}%`,
               top: `${cloud.y}px`,
-              width: `${cloud.w}px`,
+              // Nav clouds carry a readable label — on a narrow phone a fixed
+              // 300px puff centered at 16%/84% pushes the text past the edge,
+              // so those two shrink with the viewport instead of clipping.
+              width: cloud.label ? "clamp(150px, 40vw, 300px)" : `${cloud.w}px`,
               zIndex: cloud.z,
               opacity: a * 0.97,
               transform: slide,
