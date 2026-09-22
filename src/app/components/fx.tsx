@@ -82,6 +82,8 @@ export function CodingDuck({
           onClick={onActivate}
           style={{ cursor: onActivate ? "pointer" : "default", pointerEvents: pop > 0.5 ? "auto" : "none" }}
         >
+          {/* invisible hit-slop — the pixel art alone is a fiddly target to land a click on */}
+          <rect x={15} y={76} width={270} height={260} fill="transparent" />
           {/* the real duck — pixel art, standing in for the old hand-drawn silhouette */}
           <g transform={facing === "left" ? "translate(280,0) scale(-1,1)" : undefined}>
             <image href="/images/duck-pixel.png" x={45} y={106} width={190} height={200} style={{ imageRendering: "pixelated" }} />
