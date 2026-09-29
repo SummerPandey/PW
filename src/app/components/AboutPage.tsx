@@ -110,7 +110,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
     <div style={{ minHeight: "100vh", fontFamily: FONT, color: C.dark, ...DOT_GRID }}>
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "58px clamp(16px, 3vw, 36px) 10px" }}>
         {/* ── row 1: hero (left) + roles & motto (right) ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
+        <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
           <Box
             dark
             style={{
@@ -252,7 +252,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
         </Reveal>
 
         {/* ── row 2: three showcases, all leading to Works ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
+        <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
           <Box
             dark
             onClick={() => goTo("works")}
@@ -422,7 +422,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
 
         {/* ── row 3: skill chips (left) + contact (right) ── */}
         <Reveal style={{ marginBottom: GAP }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
+          <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
             <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <Label>In the stack</Label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>

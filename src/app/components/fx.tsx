@@ -480,6 +480,10 @@ export function useKonami(onUnlock: () => void) {
         progress++;
         if (progress === KONAMI.length) {
           progress = 0;
+          // The code's last key doubles as the global "About" shortcut —
+          // stop it here (capture phase, so we run before that handler)
+          // so unlocking the achievement doesn't also navigate away.
+          e.stopPropagation();
           onUnlock();
         }
       } else {
@@ -487,8 +491,8 @@ export function useKonami(onUnlock: () => void) {
         progress = key === KONAMI[0] ? 1 : 0;
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, [onUnlock]);
 }
 

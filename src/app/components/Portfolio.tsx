@@ -511,7 +511,10 @@ function WaterDuck({
         zIndex: 0,
         opacity: clamp01((g - 0.1) / 0.3),
         transition: "opacity 0.6s ease",
-        touchAction: "none",
+        // pan-y (not none): lets a touch swipe that starts on the duck still
+        // scroll the page vertically. Horizontal drags aren't a native gesture
+        // here, so they still reach onPointerMove uncontested.
+        touchAction: "pan-y",
         outline: "none",
         cursor: dragging ? "grabbing" : "grab",
       }}
@@ -909,12 +912,18 @@ export function Portfolio() {
   useEffect(() => {
     if (!confetti) return;
     const stopConfetti = setTimeout(() => setConfetti(false), 3800);
-    const hideToast = setTimeout(() => setToast(null), 4200);
-    return () => {
-      clearTimeout(stopConfetti);
-      clearTimeout(hideToast);
-    };
+    return () => clearTimeout(stopConfetti);
   }, [confetti]);
+
+  // Its own effect, independent of the confetti timer — sharing one effect
+  // meant the confetti timeout flipping `confetti` to false re-ran this
+  // effect and cancelled the still-pending toast timeout in its cleanup,
+  // so the toast never went away.
+  useEffect(() => {
+    if (!toast) return;
+    const hideToast = setTimeout(() => setToast(null), 4200);
+    return () => clearTimeout(hideToast);
+  }, [toast]);
 
   const navBtn = (panel: Panel): React.CSSProperties => ({
     background: "none",

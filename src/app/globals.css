@@ -398,6 +398,14 @@ body::after {
 }
 
 @media (max-width: 640px) {
+  /* the About page's bento grid rows are multi-column, fixed-ratio grids
+     (1.5fr 1fr, 1.3fr 1fr 1fr, ...) sized for desktop. At phone widths
+     those columns get too narrow: text wraps hard, stretches the whole
+     row's height, and labels/tags clip — so stack them into one column. */
+  .bento-row { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
   /* fixed-height 3D rotation doesn't work once the back needs to grow
      taller than the front, so mobile swaps to a plain instant toggle
      and lets the card's own height follow whichever face is showing */
