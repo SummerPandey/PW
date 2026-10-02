@@ -1,5 +1,5 @@
 import { Linkedin, Github, FileText, ArrowUpRight, Trophy } from "lucide-react";
-import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
+import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, EYEBROW, type Panel } from "./theme";
 import { Typewriter, Reveal, Sprout } from "./fx";
 
 /* ────────────────────────────────────────────────────────────────────
@@ -8,7 +8,7 @@ import { Typewriter, Reveal, Sprout } from "./fx";
    contact, and a footer bar.
    ──────────────────────────────────────────────────────────────────── */
 
-const GAP = "6px"; // tight gutter between bento boxes
+const GAP = "10px"; // gutter between bento boxes
 const RADIUS = "18px";
 
 /* ── tiny building blocks ──────────────────────────────────────────── */
@@ -16,22 +16,13 @@ const RADIUS = "18px";
 /** Small uppercase section label, e.g. "ROLES". */
 function Label({ children, dark }: { children: React.ReactNode; dark?: boolean }) {
   return (
-    <div
-      style={{
-        fontSize: "11px",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        color: dark ? "rgba(255,249,232,0.55)" : C.muted,
-        letterSpacing: "0.18em",
-      }}
-    >
-      {children}
-    </div>
+    <div style={{ ...EYEBROW, color: dark ? "rgba(255,249,232,0.55)" : C.muted }}>{children}</div>
   );
 }
 
-/** One bento box. `dark` flips to the forest-walnut gradient,
-    `arrow` adds a corner arrow, `flat` turns off the hover lift. */
+/** One bento box. `dark` flips to the golden-dusk gradient, `arrow`
+    adds a corner arrow, `flat` turns off hover entirely. Only boxes you
+    can click lift on hover; the rest just warm their border. */
 function Box({
   dark,
   children,
@@ -50,7 +41,7 @@ function Box({
   return (
     <div
       onClick={onClick}
-      className={flat ? undefined : "pbox"}
+      className={flat ? undefined : onClick ? "pbox pbox-link" : "pbox"}
       style={{
         position: "relative",
         background: dark ? DARK_GRAD : C.panel,
@@ -65,7 +56,7 @@ function Box({
     >
       {children}
       {arrow && (
-        <div style={{ position: "absolute", top: "14px", right: "14px" }}>
+        <div className="pbox-arrow" style={{ position: "absolute", top: "14px", right: "14px" }}>
           <ArrowUpRight size={15} color={C.sun} strokeWidth={2} opacity={0.85} />
         </div>
       )}
@@ -98,7 +89,7 @@ const WINS = [
 ];
 
 const SOCIALS = [
-  { Icon: Linkedin, href: "https://www.linkedin.com/", label: "LinkedIn" },
+  { Icon: Linkedin, href: "https://www.linkedin.com/in/summerpandey/", label: "LinkedIn" },
   { Icon: Github, href: "https://github.com/SummerPandey", label: "GitHub" },
   { Icon: FileText, href: "/Summer_Pandey_Resume.pdf", label: "Resume" },
 ];
@@ -108,7 +99,7 @@ const SOCIALS = [
 export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
   return (
     <div style={{ minHeight: "100vh", fontFamily: FONT, color: C.dark, ...DOT_GRID }}>
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "58px clamp(16px, 3vw, 36px) 10px" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "70px clamp(16px, 3vw, 36px) 24px" }}>
         {/* ── row 1: hero (left) + roles & motto (right) ── */}
         <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
           <Box
@@ -124,16 +115,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             {/* sun-glow + swaying sprout, plus a headshot avatar */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    borderRadius: "50%",
-                    background: "radial-gradient(circle, #FFD447, #EAAA22)",
-                    boxShadow: "0 0 22px rgba(234,170,34,0.4)",
-                    animation: "sun-pulse 3s ease-in-out infinite",
-                  }}
-                />
+                <div className="sun-dot" style={{ width: "30px", height: "30px" }} />
                 <span className="sway" style={{ display: "inline-flex" }}>
                   <Sprout size={26} />
                 </span>
@@ -156,36 +138,34 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             </div>
 
             <div>
-              <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,249,232,0.55)" }}>
-                Summer Pandey · Software Engineer
-              </div>
-              <div
+              <div style={{ ...EYEBROW, color: "rgba(255,249,232,0.55)" }}>Summer Pandey · Software Engineer</div>
+              {/* sized for all three final lines up front, so the card doesn't grow as it types */}
+              <h2
                 className="serif"
                 style={{
                   fontFamily: SERIF,
                   fontWeight: 600,
                   fontSize: "clamp(22px, 2.4vw, 32px)",
                   color: C.cream,
-                  lineHeight: 1.1,
-                  letterSpacing: "0.005em",
-                  minHeight: "72px",
-                  marginTop: "6px",
+                  lineHeight: 1.12,
+                  letterSpacing: "-0.01em",
+                  minHeight: "calc(3 * 1.12em)",
+                  margin: "10px 0 0",
                 }}
               >
                 <Typewriter text={"Building reliable\nAI for the\nreal world"} style={{ color: C.cream }} />
-              </div>
+              </h2>
               <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.02em" }}>
                 From edge computer vision to production voice systems.
               </div>
               <button
-                className="btn-bounce"
+                className="btn-quiet btn-gold"
                 onClick={() => goTo("works")}
                 style={{
-                  marginTop: "14px",
+                  marginTop: "16px",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
-                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
                   border: "none",
                   borderRadius: "999px",
                   padding: "10px 16px",
@@ -193,8 +173,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontFamily: FONT,
                   fontWeight: 700,
                   fontSize: "13px",
-                  color: "#080909",
-                  letterSpacing: "0.04em",
+                  letterSpacing: "0.01em",
                 }}
               >
                 Explore my work <ArrowUpRight size={15} color="#080909" strokeWidth={2.5} />
@@ -242,8 +221,8 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
 
         {/* ── about text ── */}
         <Reveal style={{ marginBottom: GAP }}>
-          <Box style={{ padding: "14px 18px" }}>
-            <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.65, color: C.moss, margin: 0 }}>
+          <Box style={{ padding: "16px 20px" }}>
+            <p style={{ fontSize: "14px", fontWeight: 500, lineHeight: 1.65, color: C.moss, margin: 0, maxWidth: "68ch" }}>
               I&apos;m Summer Pandey, a Computer Science and Data Science student at Augustana College. I build
               human-centered AI products across edge computer vision, voice automation, and personal health. I care
               about privacy, reliability, and turning complex technology into tools people can actually use.
@@ -262,9 +241,10 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             <Label dark>Tech works</Label>
             <div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "9px" }}>
-                {["ARGUS", "VENTUREGAIN"].map((name) => (
+                {["Argus", "VentureGain"].map((name) => (
                   <button
                     key={name}
+                    className="chip"
                     onClick={(e) => {
                       e.stopPropagation();
                       goTo("works");
@@ -282,7 +262,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                       fontFamily: FONT,
                     }}
                   >
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: C.sun, opacity: 0.85, letterSpacing: "0.08em" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: C.leaf, letterSpacing: "0.01em" }}>
                       {name}
                     </span>
                   </button>
@@ -314,10 +294,10 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 gap: "4px",
               }}
             >
-              <div style={{ fontSize: "11px", fontWeight: 700, color: C.cream, lineHeight: 1.35 }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: C.cream, lineHeight: 1.4 }}>
                 Sports Media Inc. <span style={{ fontWeight: 500, opacity: 0.85 }}>· Software Engineering Intern</span>
               </div>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: C.cream, lineHeight: 1.35 }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: C.cream, lineHeight: 1.4 }}>
                 iD Tech <span style={{ fontWeight: 500, opacity: 0.85 }}>· NVIDIA AI &amp; Machine Learning Instructor</span>
               </div>
             </div>
@@ -345,23 +325,9 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 padding: "8px",
               }}
             >
-              {["Argus", "VentureGain", "Preventia"].map((name) => (
-                <span
-                  key={name}
-                  style={{
-                    fontSize: "9.5px",
-                    fontWeight: 700,
-                    color: "#080909",
-                    background: "rgba(255,212,71,0.35)",
-                    borderRadius: "999px",
-                    padding: "3px 7px",
-                    letterSpacing: "0.01em",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {name}
-                </span>
-              ))}
+              <span style={{ fontSize: "12px", fontWeight: 600, color: C.cream, letterSpacing: "0.01em", textAlign: "center" }}>
+                Argus · VentureGain · Preventia
+              </span>
             </div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>3 products across edge AI, health, and data</div>
           </Box>
@@ -376,12 +342,11 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 href="https://devpost.com/software/preventia-sblncy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="badge"
+                className="badge btn-gold"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
                   borderRadius: "999px",
                   padding: "8px 14px",
                   fontSize: "12px",
@@ -407,13 +372,18 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                     borderRadius: "999px",
                     padding: "8px 13px",
                     fontSize: "12px",
-                    fontWeight: 600,
+                    fontWeight: 500,
                     color: C.moss,
-                    letterSpacing: "0.02em",
+                    letterSpacing: "0.01em",
                   }}
                 >
-                  <span style={{ color: C.leaf }}>✦</span>
-                  {win}
+                  <span className="spark" style={{ color: C.leaf }}>
+                    ✦
+                  </span>
+                  <span>
+                    <b style={{ color: C.cream, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{win.split(" ")[0]}</b>{" "}
+                    {win.split(" ").slice(1).join(" ")}
+                  </span>
                 </span>
               ))}
             </div>
@@ -474,10 +444,10 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 style={{
                   fontFamily: SERIF,
                   fontWeight: 600,
-                  fontSize: "clamp(18px, 2vw, 26px)",
+                  fontSize: "clamp(20px, 2vw, 26px)",
                   color: C.cream,
-                  lineHeight: 1.35,
-                  letterSpacing: "0.01em",
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.01em",
                 }}
               >
                 Let&apos;s build something

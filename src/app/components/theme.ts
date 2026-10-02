@@ -48,3 +48,16 @@ export const DOT_GRID: CSSProperties = {
     "radial-gradient(rgba(234, 170, 34, 0.08) 1.4px, transparent 1.4px)",
   backgroundSize: "26px 26px",
 };
+
+/** The one small-caps label style used across the site ("ROLES",
+    "WHAT I'VE BUILT", card-back section heads). Labels whisper. On a
+    dark feature card, override `color` with `C.sun`. */
+export const EYEBROW: CSSProperties = {
+  fontFamily: FONT,
+  fontSize: "11px",
+  fontWeight: 700,
+  lineHeight: 1,
+  letterSpacing: "0.14em",
+  textTransform: "uppercase",
+  color: C.muted,
+};

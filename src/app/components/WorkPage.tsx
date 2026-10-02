@@ -19,8 +19,21 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, type Panel } from "./theme";
+import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, EYEBROW, type Panel } from "./theme";
 import { Reveal } from "./fx";
+import {
+  ART_FIELD,
+  PHOTO_SCRIM,
+  VentureGainArt,
+  CryptoArt,
+  PiCarArt,
+  WlogArt,
+  PortfolioArt,
+  DataArt,
+  AuraTVArt,
+  VolleyballArt,
+  MMMArt,
+} from "./ProjectArt";
 
 /* ────────────────────────────────────────────────────────────────────
    WorkPage — the project garden: flippable project cards (front =
@@ -43,11 +56,11 @@ type BackSection = { label: string; text: string };
 
 type Project = {
   title: string;
-  icon: LucideIcon;
+  icon: LucideIcon; // fallback banner mark for a project with neither photo nor art
   status: Status;
   desc: string; // front-facing description
-  grad: string; // banner gradient
-  photo?: string; // optional banner photo, shown under the gradient wash
+  photo?: string; // banner photo, when there's a real one
+  art?: () => React.ReactElement; // hand-drawn banner art for projects without a photo
   tags: string[]; // 3-5 tech tags, shown on the front
   ghUrl?: string; // omitted when no confirmed/public repo exists
   demoUrl?: string; // omitted when nothing is actually deployed
@@ -65,7 +78,6 @@ const PROJECTS: Project[] = [
     icon: ShieldCheck,
     status: "In Development",
     desc: "Privacy-first edge AI for monitoring operating-room safety without sending sensitive video to the cloud.",
-    grad: "linear-gradient(150deg, rgba(58,49,18,0.55), rgba(10,10,10,0.85))",
     photo: "/images/jetson-device.jpg",
     tags: ["python", "computer-vision", "jetson", "gemini-ai"],
     ghUrl: "https://github.com/SummerPandey/Argus_0.1",
@@ -94,10 +106,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "VentureGain",
+    art: VentureGainArt,
     icon: Activity,
     status: "Live",
     desc: "An AI-assisted health and workout tracker that turns photo, voice, and text logs into structured daily records.",
-    grad: "linear-gradient(150deg, #3a3214, #121313)",
     tags: ["typescript", "react", "supabase", "postgresql", "ai"],
     ghUrl: "https://github.com/SummerPandey/Venture_Gain",
     demoUrl: "https://venture-gain.vercel.app",
@@ -129,7 +141,6 @@ const PROJECTS: Project[] = [
     icon: Stethoscope,
     status: "Award Winner",
     desc: "A Gemini-powered preventive-health app that creates personalized health checklists from demographic and regional risk factors.",
-    grad: "linear-gradient(150deg, rgba(58,44,10,0.6), rgba(10,10,10,0.88))",
     photo: "/images/team-photo-2.jpg",
     tags: ["flutter", "firebase", "gemini-ai", "health-tech"],
     devpostUrl: "https://devpost.com/software/preventia-sblncy",
@@ -158,10 +169,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Crypto Sentiment Analyzer",
+    art: CryptoArt,
     icon: Coins,
     status: "Prototype",
     desc: "A machine-learning pipeline that scores sentiment in cryptocurrency news and social-media discussions.",
-    grad: "linear-gradient(150deg, #4a3f1a, #16130a)",
     tags: ["python", "roberta", "vader", "nlp"],
     back: {
       sections: [
@@ -188,10 +199,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Pi Car",
+    art: PiCarArt,
     icon: Navigation,
     status: "Prototype",
     desc: "A Raspberry Pi robotics car that uses real-time lane detection for autonomous navigation.",
-    grad: "linear-gradient(150deg, #3d3416, #171310)",
     tags: ["python", "opencv", "raspberry-pi", "robotics"],
     back: {
       sections: [
@@ -218,10 +229,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Wlog",
+    art: WlogArt,
     icon: Dumbbell,
     status: "Prototype",
     desc: "A Chrome extension that logs workouts from plain language, cutting manual entry time.",
-    grad: "linear-gradient(150deg, #453b16, #1a1610)",
     tags: ["chrome-extension", "openai", "nodejs"],
     back: {
       sections: [
@@ -236,10 +247,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Portfolio Website",
+    art: PortfolioArt,
     icon: Aperture,
     status: "Live",
     desc: "This site — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
-    grad: "linear-gradient(150deg, #3a3420, #16140f)",
     ghUrl: "https://github.com/SummerPandey/PW",
     demoUrl: "https://summerpandey.vercel.app",
     tags: ["nextjs", "react", "typescript"],
@@ -256,10 +267,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Data Project",
+    art: DataArt,
     icon: BarChart3,
     status: "Prototype",
     desc: "Twitter sentiment analysis — cleaning, modeling, and visualizing public sentiment from tweet data.",
-    grad: "linear-gradient(150deg, #423a19, #18150d)",
     tags: ["python", "nlp", "data-science"],
     back: {
       sections: [
@@ -274,10 +285,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "CS SI · AuraTV",
+    art: AuraTVArt,
     icon: Cast,
     status: "Prototype",
     desc: "A streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
-    grad: "linear-gradient(150deg, #383014, #14120a)",
     tags: ["flutter", "firebase", "youtube-api"],
     back: {
       sections: [
@@ -292,10 +303,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "Volleyball Organizer",
+    art: VolleyballArt,
     icon: CircleDot,
     status: "Prototype",
     desc: "A volleyball tournament organizer — building brackets, scheduling matches, and tracking results.",
-    grad: "linear-gradient(150deg, #473d17, #1c170e)",
     tags: ["app", "scheduling"],
     back: {
       sections: [
@@ -310,10 +321,10 @@ const PROJECTS: Project[] = [
   },
   {
     title: "MMM",
+    art: MMMArt,
     icon: TrendingUp,
     status: "Prototype",
     desc: "Multi-marketing modeling — quantifying how marketing channels drive outcomes with SQL and Python.",
-    grad: "linear-gradient(150deg, #3f3618, #17140b)",
     tags: ["python", "sql", "marketing"],
     back: {
       sections: [
@@ -384,8 +395,8 @@ function LinkButtons({
           rel="noopener noreferrer"
           onClick={onLinkClick}
           tabIndex={tabIndex}
-          className="btn-bounce"
-          style={{ ...btnStyle, background: "rgba(255,255,255,0.1)", color: C.cream, border: `1px solid ${C.border}` }}
+          className="btn-quiet"
+          style={{ ...btnStyle, background: "rgba(255,255,255,0.08)", color: C.cream, border: `1px solid ${C.border}` }}
         >
           <Github size={13} /> Code
         </a>
@@ -397,8 +408,8 @@ function LinkButtons({
           rel="noopener noreferrer"
           onClick={onLinkClick}
           tabIndex={tabIndex}
-          className="btn-bounce"
-          style={{ ...btnStyle, background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`, color: "#080909" }}
+          className="btn-quiet btn-gold"
+          style={btnStyle}
         >
           <ArrowUpRight size={13} strokeWidth={2.4} /> Live demo
         </a>
@@ -410,8 +421,8 @@ function LinkButtons({
           rel="noopener noreferrer"
           onClick={onLinkClick}
           tabIndex={tabIndex}
-          className="btn-bounce"
-          style={{ ...btnStyle, background: "rgba(255,255,255,0.1)", color: C.cream, border: `1px solid ${C.border}` }}
+          className="btn-quiet"
+          style={{ ...btnStyle, background: "rgba(255,255,255,0.08)", color: C.cream, border: `1px solid ${C.border}` }}
         >
           <ArrowUpRight size={13} strokeWidth={2.4} /> Devpost writeup
         </a>
@@ -440,36 +451,25 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
             boxShadow: "0 4px 16px rgba(0,0,0,0.35)",
           }}
         >
-          {/* banner: photo (if any) + gradient wash, sigil mark, status badge, GitHub shortcut */}
+          {/* banner: real photo, or hand-drawn art — plus status badge and GitHub shortcut */}
           <div
+            className="card-banner"
             style={{
               position: "relative",
-              height: "150px",
               borderRadius: "16px",
-              flexShrink: 0,
-              background: p.photo ? `${p.grad}, url(${p.photo}) center/cover no-repeat` : p.grad,
+              background: p.photo ? `${PHOTO_SCRIM}, url(${p.photo}) center/cover no-repeat` : ART_FIELD,
+              boxShadow: "inset 0 0 0 1px rgba(255,249,232,0.06)",
               overflow: "hidden",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <span
-              className="card-icon"
-              style={{
-                display: "flex",
-                width: "72px",
-                height: "72px",
-                borderRadius: "50%",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.22)",
-                filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))",
-              }}
-            >
-              <p.icon size={34} color={C.cream} strokeWidth={1.4} />
-            </span>
+            {p.photo ? null : p.art ? (
+              <p.art />
+            ) : (
+              <p.icon size={34} color={C.cream} strokeWidth={1.4} aria-hidden />
+            )}
             <span
               style={{
                 position: "absolute",
@@ -480,7 +480,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                 gap: "5px",
                 background: "rgba(8,9,9,0.85)",
                 color: status.color,
-                fontSize: "10px",
+                fontSize: "11px",
                 fontWeight: 700,
                 letterSpacing: "0.02em",
                 padding: "5px 10px",
@@ -498,7 +498,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                 onClick={stop}
                 tabIndex={flipped ? -1 : 0}
                 aria-label={`Open ${p.title} on GitHub`}
-                className="btn-bounce"
+                className="btn-quiet"
                 style={{
                   position: "absolute",
                   top: "10px",
@@ -521,20 +521,24 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
           {/* title + description */}
           <div
             className="serif"
-            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.dark, marginTop: "12px", letterSpacing: "0.005em" }}
+            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.dark, marginTop: "14px", lineHeight: 1.25 }}
           >
             {p.title}
           </div>
-          <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.55, color: C.moss, marginTop: "6px", flex: 1 }}>{p.desc}</p>
+          <p className="card-desc" style={{ fontSize: "14px", fontWeight: 500, lineHeight: 1.6, color: C.moss, marginTop: "6px" }}>
+            {p.desc}
+          </p>
 
-          {/* colored hashtags */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 10px", marginTop: "10px" }}>
+          {/* hashtags */}
+          <div className="card-tags" style={{ display: "flex", flexWrap: "wrap", gap: "6px 10px", marginTop: "10px" }}>
             {p.tags.map((tag, i) => (
               <span key={tag} style={{ fontSize: "12px", fontWeight: 700, color: TAG_COLORS[i % TAG_COLORS.length] }}>
                 #{tag}
               </span>
             ))}
           </div>
+
+          <div aria-hidden style={{ height: "14px", flexShrink: 0 }} />
 
           {/* flip control */}
           <button
@@ -546,7 +550,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
             aria-label={`View details for ${p.title}`}
             className="tab"
             style={{
-              marginTop: "12px",
+              marginTop: "auto",
               width: "100%",
               display: "inline-flex",
               alignItems: "center",
@@ -561,6 +565,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
               border: `1px solid ${C.border}`,
               background: "rgba(255,255,255,0.04)",
               color: C.cream,
+              flexShrink: 0,
             }}
           >
             View details <ArrowUpRight size={14} strokeWidth={2.4} />
@@ -581,27 +586,23 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
         >
           <div
             className="serif"
-            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "18px", color: C.cream, letterSpacing: "0.005em" }}
+            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.cream, lineHeight: 1.25 }}
           >
             {p.title}
           </div>
 
-          <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
+          <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
             {p.back.sections.map((s) => (
               <div key={s.label}>
-                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.sun }}>
-                  {s.label}
-                </div>
-                <p style={{ fontSize: "12.5px", fontWeight: 500, lineHeight: 1.55, color: "rgba(255,249,232,0.82)", marginTop: "3px" }}>
+                <div style={{ ...EYEBROW, color: C.sun }}>{s.label}</div>
+                <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.5, color: "rgba(255,249,232,0.82)", marginTop: "5px" }}>
                   {s.text}
                 </p>
               </div>
             ))}
             <div>
-              <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: C.sun }}>
-                Technology
-              </div>
-              <p style={{ fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5, color: C.cream, marginTop: "3px" }}>{p.back.tech}</p>
+              <div style={{ ...EYEBROW, color: C.sun }}>Technology</div>
+              <p style={{ fontSize: "13px", fontWeight: 600, lineHeight: 1.5, color: C.cream, marginTop: "5px" }}>{p.back.tech}</p>
             </div>
           </div>
 
@@ -614,7 +615,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
               aria-expanded={flipped}
               aria-controls={backId}
               aria-label={`Flip back to ${p.title} summary`}
-              className="btn-bounce"
+              className="btn-quiet"
               style={{
                 alignSelf: "flex-start",
                 display: "inline-flex",
@@ -664,30 +665,31 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
     border: "1px solid rgba(234,170,34,0.16)",
     padding: "20px 22px",
   };
-  const cardLabel = (dark?: boolean): React.CSSProperties => ({
-    fontSize: "11px",
-    fontWeight: 700,
-    letterSpacing: "0.16em",
-    textTransform: "uppercase",
-    color: dark ? C.sun : C.muted,
-  });
+  const cardLabel = (dark?: boolean): React.CSSProperties => ({ ...EYEBROW, color: dark ? C.sun : C.muted });
 
   return (
     <div style={{ minHeight: "100vh", fontFamily: FONT, ...DOT_GRID }}>
       <div style={{ padding: "92px clamp(16px, 3vw, 36px) 56px", maxWidth: "1240px", margin: "0 auto" }}>
         {/* ── intro ── */}
-        <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: C.wood }}>
-          What I&apos;ve built
-        </div>
+        <div style={EYEBROW}>What I&apos;ve built</div>
         <h1
           className="serif"
-          style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(34px, 4vw, 56px)", color: C.dark, margin: "8px 0 0", letterSpacing: "0.01em" }}
+          style={{
+            fontFamily: SERIF,
+            fontWeight: 600,
+            fontSize: "clamp(36px, 4vw, 56px)",
+            lineHeight: 1.05,
+            color: C.dark,
+            margin: "14px 0 0",
+            letterSpacing: "-0.018em",
+          }}
         >
           My Work.
         </h1>
-        <p style={{ maxWidth: "620px", marginTop: "14px", fontSize: "15px", fontWeight: 500, lineHeight: 1.7, color: C.moss }}>
-          A collection of things I&apos;ve built. Filter by what you&apos;re curious about —
-          each card links out to its code, write-up, or résumé entry.
+        <p style={{ maxWidth: "62ch", marginTop: "16px", fontSize: "15px", fontWeight: 500, lineHeight: 1.65, color: C.moss }}>
+          A collection of things I&apos;ve built — products and experiments across edge AI, health technology,
+          automation, and applied machine learning. Filter by what you&apos;re curious about; each card links out
+          to its code, write-up, or résumé entry.
         </p>
 
         {/* ── filter tabs ── */}
@@ -698,7 +700,8 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
               <button
                 key={tab}
                 onClick={() => selectFilter(tab)}
-                className="tab"
+                aria-pressed={on}
+                className={on ? "tab btn-gold" : "tab"}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -711,41 +714,27 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontSize: "13px",
                   letterSpacing: "0.01em",
                   border: on ? "1px solid transparent" : `1px solid ${C.border}`,
-                  background: on ? `linear-gradient(90deg, ${C.leaf}, ${C.sun})` : C.panel,
-                  color: on ? "#080909" : C.moss,
-                  boxShadow: on ? "0 6px 16px rgba(234,170,34,0.18)" : "none",
+                  background: C.panel,
+                  color: C.moss,
                 }}
               >
                 {tab}
-                <span style={{ fontWeight: 700, opacity: 0.7, fontSize: "12px" }}>({countFor(tab)})</span>
+                <span style={{ fontWeight: 600, opacity: 0.6, fontSize: "12px", fontVariantNumeric: "tabular-nums" }}>
+                  {countFor(tab)}
+                </span>
               </button>
             );
           })}
         </div>
-        <div
-          style={{
-            height: "2px",
-            background: `linear-gradient(90deg, ${C.leaf}, ${C.wood}, transparent)`,
-            borderRadius: "2px",
-            margin: "18px 0 24px",
-          }}
-        />
+        <div style={{ height: "1px", background: C.border, margin: "24px 0 28px" }} />
 
-        {/* ── selected-work header ── */}
-        <h2
-          className="serif"
-          style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(22px, 2.6vw, 30px)", color: C.dark, margin: 0, letterSpacing: "0.01em" }}
-        >
-          Selected Work
-        </h2>
-        <p style={{ maxWidth: "620px", marginTop: "8px", marginBottom: "20px", fontSize: "14px", fontWeight: 500, lineHeight: 1.6, color: C.moss }}>
-          Products and experiments across edge AI, health technology, automation, and applied machine learning.
-        </p>
+        {/* the grid's heading, for screen readers — the H1 above already says it visually */}
+        <h2 className="sr-only">Selected work</h2>
 
         {/* ── filtered project grid ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "20px" }}>
           {shown.map((p, i) => (
-            <Reveal key={`${filter}-${p.title}`} delay={i * 55} style={{ display: "flex" }}>
+            <Reveal key={`${filter}-${p.title}`} delay={Math.min(i, 5) * 40} style={{ display: "flex" }}>
               <ProjectCard
                 p={p}
                 flipped={flippedTitle === p.title}
@@ -764,13 +753,13 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream }}>
                   NVIDIA AI &amp; Machine Learning Instructor
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,249,232,0.6)", marginTop: "3px" }}>
+                <div style={{ fontSize: "12px", fontWeight: 500, color: "rgba(255,249,232,0.6)", marginTop: "4px" }}>
                   iD Tech · Stanford, CA · Jun 2026 – Present
                 </div>
                 <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
                   Software Engineering Intern
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 600, color: "rgba(255,249,232,0.6)", marginTop: "3px" }}>
+                <div style={{ fontSize: "12px", fontWeight: 500, color: "rgba(255,249,232,0.6)", marginTop: "4px" }}>
                   Sports Media Inc. · Jun 2025 – Aug 2025
                 </div>
               </div>
@@ -831,14 +820,14 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
           >
             <div
               className="serif"
-              style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(18px, 2vw, 26px)", color: C.cream, lineHeight: 1.35 }}
+              style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(20px, 2vw, 26px)", color: C.cream, lineHeight: 1.3, letterSpacing: "-0.01em" }}
             >
               Let&apos;s build something <span style={{ color: C.sun }}>useful</span> ✦
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={() => goTo("welcome")}
-                className="btn-bounce"
+                className="btn-quiet"
                 style={{
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.16)",
@@ -855,9 +844,8 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
               </button>
               <a
                 href="mailto:summerpandey23@augustana.edu"
-                className="btn-bounce"
+                className="btn-quiet btn-gold"
                 style={{
-                  background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
                   borderRadius: "999px",
                   padding: "11px 18px",
                   textDecoration: "none",

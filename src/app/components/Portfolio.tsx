@@ -28,6 +28,9 @@ const panelStyle: React.CSSProperties = {
   overflowY: "auto",
   overflowX: "hidden",
   scrollSnapAlign: "start",
+  // contains absolutely-positioned descendants (e.g. sr-only headings) so
+  // they can't leak out and give the whole document a scrollbar
+  position: "relative",
 };
 
 /* ── CursorGlow — a soft sun-glow that follows the pointer ─────────── */
@@ -39,19 +42,32 @@ function CursorGlow() {
     const el = ref.current;
     if (!el || typeof window === "undefined") return;
     if (window.matchMedia("(pointer: coarse)").matches) return; // no cursor on touch
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    // Batch position updates into one transform per frame.
+    // The light eases after the pointer instead of sticking to it — it
+    // trails a touch, like sunlight through a window, and the loop parks
+    // itself once it has caught up.
     let raf = 0;
     let x = 0;
     let y = 0;
+    let cx = 0;
+    let cy = 0;
+    let placed = false;
     const apply = () => {
-      raf = 0;
-      el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      cx += (x - cx) * 0.16;
+      cy += (y - cy) * 0.16;
+      el.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
       el.style.opacity = "1";
+      raf = Math.abs(x - cx) + Math.abs(y - cy) > 0.5 ? requestAnimationFrame(apply) : 0;
     };
     const onMove = (e: MouseEvent) => {
       x = e.clientX;
       y = e.clientY;
+      if (!placed) {
+        cx = x;
+        cy = y;
+        placed = true;
+      }
       if (!raf) raf = requestAnimationFrame(apply);
     };
     const onLeave = () => {
@@ -75,11 +91,12 @@ function CursorGlow() {
         position: "fixed",
         top: 0,
         left: 0,
-        width: "180px",
-        height: "180px",
+        width: "320px",
+        height: "320px",
         borderRadius: "50%",
         background:
-          "radial-gradient(circle, rgba(234,170,34,0.32) 0%, rgba(234,170,34,0.14) 40%, rgba(234,170,34,0) 70%)",
+          "radial-gradient(circle, rgba(234,170,34,0.13) 0%, rgba(234,170,34,0.05) 40%, rgba(234,170,34,0) 70%)",
+        mixBlendMode: "screen",
         pointerEvents: "none",
         zIndex: 88,
         opacity: 0,
@@ -102,8 +119,8 @@ function CloudPuff({ label }: { label?: string }) {
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2e1f1c" />
-          <stop offset="1" stopColor="#150c0b" />
+          <stop offset="0" stopColor="#26231b" />
+          <stop offset="1" stopColor="#0e0d0a" />
         </linearGradient>
       </defs>
       {/* overlapping puffs make the smoke body */}
@@ -115,7 +132,7 @@ function CloudPuff({ label }: { label?: string }) {
         <circle cx="200" cy="94" r="24" />
       </g>
       {/* golden rim-light on top */}
-      <ellipse cx="100" cy="52" rx="30" ry="13" fill="rgba(234,170,34,0.16)" />
+      <ellipse cx="100" cy="52" rx="30" ry="13" fill="rgba(234,170,34,0.22)" />
       {label && (
         <text
           x="120"
@@ -126,7 +143,7 @@ function CloudPuff({ label }: { label?: string }) {
           fontSize="22"
           fontWeight="700"
           fill="#FFF9E8"
-          style={{ paintOrder: "stroke", stroke: "rgba(10,5,4,0.85)", strokeWidth: 3.5 }}
+          style={{ paintOrder: "stroke", stroke: "rgba(8,9,9,0.85)", strokeWidth: 3.5 }}
         >
           {label}
         </text>
@@ -217,7 +234,7 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
             }}
           >
             {/* each cloud bobs at its own pace */}
-            <div style={{ animation: `float-y ${cloud.s}s ease-in-out infinite` }}>
+            <div className="cloud-float" style={{ "--float": `${cloud.s}s` } as React.CSSProperties}>
               <CloudPuff label={cloud.label} />
             </div>
           </div>
@@ -233,17 +250,32 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
 type MoteCfg = {
   left: number; // starting column, %
   size: number; // px
+  opacity: number; // depth tier: dimmer = farther
+  glow: boolean; // only the nearest tier glows
   fallDuration: number; // s
   fallDelay: number; // s (negative = already mid-fall)
   swayDuration: number; // s
   swayDelay: number; // s
 };
 
+/* Three depth tiers so the light reads as near and far, not one flat
+   sheet: far motes are small, dim and slow; near ones big, bright and
+   quick. Every tier stays at least 6px so each is still catchable. */
+const MOTE_TIERS = [
+  { size: [6, 8], opacity: 0.45, fall: [16, 20], glow: false },
+  { size: [8, 11], opacity: 0.75, fall: [11, 14], glow: false },
+  { size: [12, 14], opacity: 1, fall: [8, 10], glow: true },
+] as const;
+
 function spawnMote(midFall: boolean): MoteCfg {
+  const tier = MOTE_TIERS[Math.random() < 0.45 ? 0 : Math.random() < 0.65 ? 1 : 2];
+  const pick = ([lo, hi]: readonly [number, number]) => lo + Math.random() * (hi - lo);
   return {
     left: 6 + Math.random() * 88,
-    size: (5 + Math.random() * 7) * 1.2,
-    fallDuration: 9 + Math.random() * 8,
+    size: pick(tier.size),
+    opacity: tier.opacity,
+    glow: tier.glow,
+    fallDuration: pick(tier.fall),
     // On first render, scatter motes mid-fall; respawns start from the top.
     fallDelay: midFall ? -Math.random() * 18 : -Math.random() * 1.5,
     swayDuration: 3 + Math.random() * 3,
@@ -289,7 +321,8 @@ function Mote() {
             height: `${cfg.size}px`,
             borderRadius: "50%",
             background: "radial-gradient(circle, rgba(255,212,71,0.9), rgba(234,170,34,0.45) 45%, transparent 72%)",
-            boxShadow: "0 0 8px rgba(234,170,34,0.5)",
+            boxShadow: cfg.glow ? "0 0 8px rgba(234,170,34,0.5)" : undefined,
+            opacity: cfg.opacity,
             pointerEvents: "auto",
             animation: absorbing ? "mote-absorb 0.5s cubic-bezier(0.34,1.7,0.5,1) forwards" : undefined,
           }}
@@ -722,7 +755,7 @@ function Welcome({
         <div
           style={{
             position: "absolute",
-            top: `${44 - 26 * g}px`,
+            top: `${78 - 60 * g}px`,
             left: "50%",
             transform: `translateX(-50%) scale(${0.8 + 0.55 * g})`,
             width: "120px",
@@ -752,7 +785,7 @@ function Welcome({
             pointerEvents: g > 0.3 ? "none" : "auto",
           }}
         >
-          <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.32em", textTransform: "uppercase", color: C.wood }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: C.wood }}>
             Hello, I&apos;m Summer
           </div>
           <h1
@@ -760,24 +793,28 @@ function Welcome({
             style={{
               fontFamily: SERIF,
               fontWeight: 600,
-              fontSize: "clamp(40px, 7vw, 96px)",
-              lineHeight: 1.02,
+              fontSize: "clamp(44px, 7vw, 96px)",
+              lineHeight: 1.04,
               color: C.dark,
-              margin: "12px 0 0",
-              letterSpacing: "0.01em",
+              margin: "16px 0 0",
+              letterSpacing: "-0.022em",
             }}
           >
             Welcome to my
             <br />
             <span
               style={{
-                background: `linear-gradient(90deg, ${C.leaf}, ${C.sun}, ${C.wood})`,
+                // sunlit to the last letter; `clone` repeats the full sweep on
+                // each line when the phrase wraps on a phone
+                backgroundImage: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
+                WebkitBoxDecorationBreak: "clone",
+                boxDecorationBreak: "clone",
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
               }}
             >
-  room of ideas
+              room of ideas
             </span>
           </h1>
         </div>
@@ -964,7 +1001,7 @@ export function Portfolio() {
           height: "54px",
         }}
       >
-        <button className="navlink btn-bounce" style={{ ...navBtn("about"), justifySelf: "start" }} onClick={() => goTo("about")}>
+        <button className="navlink" style={{ ...navBtn("about"), justifySelf: "start" }} onClick={() => goTo("about")}>
           ← About
         </button>
         <button
@@ -984,7 +1021,7 @@ export function Portfolio() {
           </span>
           <Clock />
         </button>
-        <button className="navlink btn-bounce" style={{ ...navBtn("works"), justifySelf: "end" }} onClick={() => goTo("works")}>
+        <button className="navlink" style={{ ...navBtn("works"), justifySelf: "end" }} onClick={() => goTo("works")}>
           Works →
         </button>
       </nav>
@@ -1020,13 +1057,17 @@ export function Portfolio() {
 
       {/* ── keyboard hint ── */}
       <div
+        className="kbd-hint"
+        aria-hidden
         style={{
           position: "fixed",
           bottom: "14px",
           left: "14px",
           zIndex: 70,
+          opacity: active === "welcome" ? 1 : 0,
+          transition: "opacity 0.2s ease",
           fontFamily: FONT,
-          fontSize: "10px",
+          fontSize: "11px",
           fontWeight: 600,
           color: "rgba(255,249,232,0.45)",
           letterSpacing: "0.12em",

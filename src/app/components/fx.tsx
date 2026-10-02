@@ -66,7 +66,7 @@ export function CodingDuck({
   return (
     <svg viewBox="0 0 300 340" className={className} width="100%" style={{ display: "block", overflow: "visible" }}>
       {/* ground shadow, settles in as the duck lands */}
-      <ellipse cx={150} cy={300} rx={100 * pop} ry={13} fill="rgba(10,5,4,0.5)" />
+      <ellipse cx={150} cy={300} rx={100 * pop} ry={13} fill="rgba(8,9,9,0.5)" />
 
       <g
         transform={`translate(150, ${300 + rise}) scale(${scale}) translate(-150, -300)`}
@@ -209,13 +209,13 @@ export function Clock({ color = C.leaf }: { color?: string }) {
       }}
     >
       <span
+        className="live-dot"
         style={{
           width: "8px",
           height: "8px",
           borderRadius: "50%",
           background: C.leaf,
           boxShadow: `0 0 8px ${C.leaf}`,
-          animation: "float-y 1.6s ease-in-out infinite",
         }}
       />
       {time ?? "--:--:--"}
@@ -274,15 +274,19 @@ export function Typewriter({
 
   return (
     <span ref={ref} style={{ whiteSpace: "pre-line", ...style }}>
-      {text.slice(0, typed)}
-      <span className="cursor" style={{ color: C.sun }}>
-        ▮
+      {/* screen readers get the whole line once, not a character at a time */}
+      <span className="sr-only">{text.replace(/\n/g, " ")}</span>
+      <span aria-hidden>
+        {text.slice(0, typed)}
+        <span className="cursor" style={{ color: C.sun }}>
+          ▮
+        </span>
       </span>
     </span>
   );
 }
 
-/* ── Reveal — bounces children in the first time they scroll into view ── */
+/* ── Reveal — settles children in the first time they scroll into view ── */
 
 export function Reveal({
   children,
@@ -403,8 +407,8 @@ export function BootScreen({ onDone }: { onDone: () => void }) {
             borderRadius: "50%",
             background: "radial-gradient(circle, #FFD447, #EAAA22)",
             boxShadow: "0 0 38px rgba(234,170,34,0.5)",
-            animation: "sun-pulse 2.4s ease-in-out infinite",
           }}
+          className="sun-pulse"
         />
         <div style={{ transformOrigin: "bottom center", animation: "grow 1.1s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
           <Sprout size={64} />

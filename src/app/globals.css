@@ -10,6 +10,15 @@
   --moss: #B9B5A8;
   --bark: #FFF9E8;
   --wood: #A39C8C;
+
+  /* motion tokens — chrome moves fast and quiet; only the delight layer
+     (duck, clouds, toast, motes, confetti, boot sprout) gets the spring */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 480ms;
 }
 
 html,
@@ -85,28 +94,26 @@ body::after {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
+/* section reveal — a short settle, no overshoot, no scale (scaling a
+   whole section blurs its text while it animates) */
 @keyframes reveal-up {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes reveal-bounce {
-  0% { opacity: 0; transform: translateY(22px) scale(0.97); }
-  62% { opacity: 1; transform: translateY(-3px) scale(1.006); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes pop-in {
-  0% { opacity: 0; transform: scale(0.5); }
-  70% { opacity: 1; transform: scale(1.14); }
-  100% { opacity: 1; transform: scale(1); }
+/* badge entrance — individual transform properties, so it never fights
+   the hover transform on the same element */
+@keyframes badge-in {
+  from { opacity: 0; scale: 0.92; translate: 0 4px; }
+  to { opacity: 1; scale: 1; translate: 0 0; }
 }
 @keyframes wobble {
   0%, 100% { transform: rotate(0) scale(1); }
-  30% { transform: rotate(-5deg) scale(1.08); }
-  65% { transform: rotate(5deg) scale(1.08); }
+  30% { transform: rotate(-12deg) scale(1.15); }
+  65% { transform: rotate(12deg) scale(1.15); }
 }
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  50% { transform: translateY(-2px); }
 }
 /* leaves drifting down on the breeze */
 @keyframes leaf-fall {
@@ -148,10 +155,19 @@ body::after {
   0% { transform: scaleY(0); opacity: 0; }
   100% { transform: scaleY(1); opacity: 1; }
 }
-/* slow sun-glow pulse */
+/* slow sun-glow pulse (boot screen) */
 @keyframes sun-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.04); }
+}
+/* a breathing glow — opacity only, so it composites instead of repainting */
+@keyframes breathe {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+@keyframes live-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* slow motes of sunlight drifting down like snow */
@@ -177,85 +193,103 @@ body::after {
   animation: blink 1s steps(1) infinite;
 }
 
-/* panel hover lift + leafy glow (springy) */
-.pbox {
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.2s ease, border-color 0.2s ease;
+/* the hero sun-dot: a steady glow with a brighter halo breathing over it */
+.sun-dot {
+  position: relative;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFD447, #EAAA22);
+  box-shadow: 0 0 14px rgba(234, 170, 34, 0.35);
 }
-.pbox:hover {
-  transform: translateY(-5px) scale(1.018);
-  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.55), 0 0 24px rgba(234, 170, 34, 0.08);
-  border-color: rgba(234, 170, 34, 0.4) !important;
+.sun-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 28px rgba(255, 212, 71, 0.6);
+  animation: breathe 3.2s ease-in-out infinite;
 }
-.pbox:active {
-  transform: translateY(-1px) scale(0.99);
+.sun-pulse {
+  animation: sun-pulse 2.4s ease-in-out infinite;
+}
+/* the clock's live dot breathes in step with the sprout's bob */
+.live-dot {
+  animation: live-dot 3.2s ease-in-out infinite;
+}
+/* each cloud floats at its own pace (duration set inline via --float) */
+.cloud-float {
+  animation: float-y var(--float, 5s) ease-in-out infinite;
 }
 
-/* bouncy buttons — pop on hover, squish on press */
-.btn-bounce {
-  transition: transform 0.2s cubic-bezier(0.34, 1.8, 0.64, 1);
+/* panel surfaces — static boxes just warm their border; boxes you can
+   click also lift (no scale: scaling a box full of text shimmers it) */
+.pbox {
+  transition: transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
 }
-.btn-bounce:hover {
-  transform: translateY(-2px) scale(1.06);
+.pbox .pbox-arrow {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+/* the delight layer's bouncy buttons — nav clouds, duck chat */
+.btn-bounce {
+  transition: transform 0.2s var(--ease-spring);
 }
 .btn-bounce:active {
-  transform: scale(0.9);
+  transform: scale(0.94);
 }
 
-/* badge: pop-in staggered once its .reveal ancestor scrolls into view, wobble on hover */
+/* quiet chrome buttons — a hair of lift, a firm press */
+.btn-quiet {
+  transition: transform var(--dur-base) var(--ease-out), filter var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+}
+.btn-quiet:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-fast);
+}
+
+/* the gold call-to-action: the same two golds, lit from above like the sun */
+.btn-gold {
+  background: linear-gradient(180deg, #FFD447, #EAAA22) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4);
+  color: #080909 !important;
+}
+
+/* badges: a short staggered entrance once the row scrolls in. The entrance
+   uses the `scale`/`translate` properties and a `both` fill, and the hover
+   wobble lives on the inner glyph — so hovering can never restart the
+   entrance (which used to blink badges out mid-hover). */
 .badge {
   opacity: 0;
-  transition: transform 0.2s ease;
 }
 .reveal.in .badge {
-  animation: pop-in 0.45s cubic-bezier(0.34, 1.7, 0.64, 1) forwards;
+  animation: badge-in var(--dur-slow) var(--ease-out) both;
 }
-.badge:hover,
-.reveal.in .badge:hover {
-  animation: wobble 0.5s ease;
+.reveal.in .badge:first-child {
+  animation-timing-function: var(--ease-spring);
 }
-.reveal.in .badge:nth-child(1) { animation-delay: 0.05s; }
-.reveal.in .badge:nth-child(2) { animation-delay: 0.12s; }
-.reveal.in .badge:nth-child(3) { animation-delay: 0.19s; }
-.reveal.in .badge:nth-child(4) { animation-delay: 0.26s; }
-.reveal.in .badge:nth-child(5) { animation-delay: 0.33s; }
-.reveal.in .badge:nth-child(6) { animation-delay: 0.40s; }
-.reveal.in .badge:nth-child(7) { animation-delay: 0.47s; }
-.reveal.in .badge:nth-child(8) { animation-delay: 0.54s; }
-.reveal.in .badge:nth-child(9) { animation-delay: 0.61s; }
-.reveal.in .badge:nth-child(10) { animation-delay: 0.68s; }
-.reveal.in .badge:nth-child(11) { animation-delay: 0.75s; }
-.reveal.in .badge:nth-child(12) { animation-delay: 0.82s; }
-.reveal.in .badge:nth-child(13) { animation-delay: 0.89s; }
-.reveal.in .badge:nth-child(14) { animation-delay: 0.96s; }
-.reveal.in .badge:nth-child(15) { animation-delay: 1.03s; }
-.reveal.in .badge:nth-child(16) { animation-delay: 1.1s; }
-.reveal.in .badge:nth-child(17) { animation-delay: 1.17s; }
-.reveal.in .badge:nth-child(18) { animation-delay: 1.24s; }
-.reveal.in .badge:nth-child(19) { animation-delay: 1.31s; }
-.reveal.in .badge:nth-child(20) { animation-delay: 1.38s; }
-.reveal.in .badge:nth-child(21) { animation-delay: 1.45s; }
-.reveal.in .badge:nth-child(22) { animation-delay: 1.52s; }
-.reveal.in .badge:nth-child(23) { animation-delay: 1.59s; }
-.reveal.in .badge:nth-child(24) { animation-delay: 1.66s; }
+.badge .spark,
+.badge > svg {
+  display: inline-block;
+}
+.reveal.in .badge:nth-child(1) { animation-delay: 0.03s; }
+.reveal.in .badge:nth-child(2) { animation-delay: 0.06s; }
+.reveal.in .badge:nth-child(3) { animation-delay: 0.09s; }
+.reveal.in .badge:nth-child(4) { animation-delay: 0.12s; }
+.reveal.in .badge:nth-child(5) { animation-delay: 0.15s; }
+.reveal.in .badge:nth-child(6) { animation-delay: 0.18s; }
+.reveal.in .badge:nth-child(7) { animation-delay: 0.21s; }
+.reveal.in .badge:nth-child(8) { animation-delay: 0.24s; }
+.reveal.in .badge:nth-child(9) { animation-delay: 0.27s; }
+.reveal.in .badge:nth-child(n + 10) { animation-delay: 0.3s; }
 
 /* gentle idle float */
 .bob {
-  animation: bob 2.4s ease-in-out infinite;
+  animation: bob 3.2s ease-in-out infinite;
 }
 .sway {
   transform-origin: bottom center;
   animation: sway 3.6s ease-in-out infinite;
-}
-
-/* stack collage tile: straighten + pop on hover */
-.tile {
-  transition: transform 0.3s cubic-bezier(0.34, 1.8, 0.5, 1), box-shadow 0.22s ease;
-}
-.tile:hover {
-  transform: rotate(0deg) scale(1.12) translateY(-4px) !important;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5) !important;
-  z-index: 30 !important;
 }
 
 /* scroll-reveal wrapper */
@@ -263,138 +297,189 @@ body::after {
   opacity: 0;
 }
 .reveal.in {
-  animation: reveal-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: reveal-up var(--dur-slow) var(--ease-out) both;
 }
 
-/* filter tab pills — springy lift + smooth color/shadow crossfade */
+/* filter tabs & "View details" — color crossfade, no scale */
 .tab {
-  transition: transform 0.22s cubic-bezier(0.34, 1.6, 0.64, 1),
-    background 0.25s ease, color 0.2s ease, box-shadow 0.25s ease,
-    border-color 0.2s ease;
-}
-.tab:hover {
-  transform: translateY(-2px) scale(1.045);
-  box-shadow: 0 8px 18px rgba(234, 170, 34, 0.2);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .tab:active {
+  transform: scale(0.97);
+}
+
+/* round icon buttons (socials) — fill with sunlight and take a soft ring */
+.icon-btn {
+  transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.icon-btn:active {
   transform: scale(0.94);
 }
 
-/* round icon buttons (socials, card links) — fill with sunlight on hover */
-.icon-btn {
-  transition: transform 0.22s cubic-bezier(0.34, 1.8, 0.64, 1),
-    background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-}
-.icon-btn:hover {
-  transform: translateY(-3px) scale(1.1);
-  background: rgba(234, 170, 34, 0.16) !important;
-  border-color: rgba(234, 170, 34, 0.5) !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(234, 170, 34, 0.12);
-}
-.icon-btn:active {
-  transform: scale(0.9);
-}
-
-/* small skill / tech chips — gentle lift, leafy tint */
+/* small skill / tech chips */
 .chip {
-  transition: transform 0.2s cubic-bezier(0.34, 1.7, 0.64, 1),
-    border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-.chip:hover {
-  transform: translateY(-2px);
-  border-color: rgba(234, 170, 34, 0.5) !important;
-  background: rgba(234, 170, 34, 0.12) !important;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
-}
-
-/* project-card emoji tips its hat when the card lifts */
-.card-icon {
-  display: inline-block;
-  transition: transform 0.35s cubic-bezier(0.34, 1.6, 0.64, 1);
-}
-.pbox:hover .card-icon {
-  transform: scale(1.14) rotate(-6deg);
+  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
 }
 
 /* warm glowing text links */
 .link-glow {
-  transition: color 0.2s ease, text-shadow 0.25s ease;
-}
-.link-glow:hover {
-  color: #FFD447 !important;
-  text-shadow: 0 0 14px rgba(255, 212, 71, 0.35);
+  transition: color var(--dur-base) var(--ease-out), text-shadow var(--dur-base) var(--ease-out);
 }
 
-/* nav link underline-on-hover — grows like a vine */
+/* nav link underline — grows from the left on the compositor */
 .navlink {
   position: relative;
-  transition: color 0.2s ease;
+  transition: color var(--dur-base) var(--ease-out);
 }
 .navlink::after {
   content: "";
   position: absolute;
   left: 0;
+  right: 0;
   bottom: -4px;
   height: 2px;
-  width: 0;
   background: linear-gradient(90deg, var(--leaf), var(--sun));
   border-radius: 2px;
-  transition: width 0.2s ease;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-base) var(--ease-out);
 }
-.navlink:hover::after {
-  width: 100%;
+
+/* hover states only for real pointers — on touch, a tap used to leave
+   cards stuck mid-lift */
+@media (hover: hover) and (pointer: fine) {
+  .pbox:hover {
+    border-color: rgba(234, 170, 34, 0.28) !important;
+  }
+  .pbox-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 249, 232, 0.05) !important;
+    border-color: rgba(234, 170, 34, 0.4) !important;
+  }
+  .pbox-link:hover .pbox-arrow {
+    transform: translate(2px, -2px);
+  }
+  .btn-bounce:hover {
+    transform: translateY(-2px) scale(1.04);
+  }
+  .btn-quiet:hover {
+    transform: translateY(-1px);
+  }
+  .btn-gold:hover {
+    filter: brightness(1.06);
+  }
+  .badge:hover .spark,
+  .badge:hover > svg {
+    animation: wobble 0.5s ease;
+  }
+  .tab:not([aria-pressed="true"]):hover {
+    border-color: rgba(234, 170, 34, 0.45) !important;
+    color: #FFF9E8 !important;
+  }
+  .icon-btn:hover {
+    background: rgba(234, 170, 34, 0.16) !important;
+    border-color: rgba(234, 170, 34, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(234, 170, 34, 0.1);
+  }
+  .chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(234, 170, 34, 0.5) !important;
+    background: rgba(234, 170, 34, 0.16) !important;
+  }
+  .link-glow:hover {
+    color: #FFD447 !important;
+    text-shadow: 0 0 14px rgba(255, 212, 71, 0.35);
+  }
+  .navlink:hover::after {
+    transform: scaleX(1);
+  }
+  .flip-scene:hover .flip-face-front {
+    border-color: rgba(234, 170, 34, 0.32) !important;
+  }
+}
+
+/* the keyboard-shortcut hint means nothing on touch, and on phones it
+   sits on top of content */
+@media (pointer: coarse), (max-width: 640px) {
+  .kbd-hint { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; animation: none; }
   .badge { opacity: 1; }
+  .reveal.in,
+  .reveal.in .badge,
   .cursor,
-  .badge,
+  .badge .spark,
+  .badge > svg,
   .bob,
   .duck-bob,
-  .sway { animation: none; }
+  .sway,
+  .sun-dot::after,
+  .sun-pulse,
+  .live-dot,
+  .cloud-float { animation: none !important; }
   .pbox,
   .btn-bounce,
+  .btn-quiet,
   .tab,
   .icon-btn,
-  .chip,
-  .card-icon,
-  .tile { transition: none; }
+  .chip { transition: none; }
 }
 
 /* ── flip-card — project cards that flip to a case-study back face ───
-   .flip-scene sizes the card and gives it 3D perspective; .flip-card
-   rotates on Y; .flip-face is shared front/back styling with
-   backface-visibility hidden so only one face ever shows. Reduced
+   Both faces share one grid cell, so the card is exactly as tall as
+   its taller face (no magic min-height, and the back never clips).
+   backface-visibility hides whichever face is turned away. Reduced
    motion swaps the rotation for a plain cross-fade. ──────────────── */
 .flip-scene {
   position: relative;
   width: 100%;
-  min-height: 640px;
   perspective: 1600px;
 }
 .flip-card {
   position: relative;
+  display: grid;
   width: 100%;
   height: 100%;
-  min-height: inherit;
-  transition: transform 0.45s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transition: transform var(--dur-slow) var(--ease-inout);
   transform-style: preserve-3d;
 }
 .flip-card.is-flipped {
   transform: rotateY(180deg);
 }
 .flip-face {
-  position: absolute;
-  inset: 0;
+  grid-area: 1 / 1;
+  position: relative;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .flip-face-back {
   transform: rotateY(180deg);
-  overflow-y: auto;
+}
+
+/* project-card banner: a 16:10 floor that grows into spare height (so the
+   slack becomes picture, not a hole), capped so art never floats in a void */
+.card-banner {
+  flex: 1 0 auto;
+  aspect-ratio: 16 / 10;
+  max-height: 300px;
+}
+/* project art: identical hairline weight at every render size */
+svg.art * {
+  vector-effect: non-scaling-stroke;
+}
+@media (min-width: 641px) {
+  /* reserve three description lines and two tag rows, so every title in
+     a row sits on the same baseline */
+  .card-desc { min-height: calc(1.6em * 3); }
+  .card-tags { min-height: 46px; align-content: flex-start; }
 }
 
 @media (max-width: 640px) {
@@ -403,45 +488,26 @@ body::after {
      those columns get too narrow: text wraps hard, stretches the whole
      row's height, and labels/tags clip — so stack them into one column. */
   .bento-row { grid-template-columns: 1fr !important; }
-}
 
-@media (max-width: 640px) {
-  /* fixed-height 3D rotation doesn't work once the back needs to grow
-     taller than the front, so mobile swaps to a plain instant toggle
-     and lets the card's own height follow whichever face is showing */
-  .flip-scene { min-height: 0; perspective: none; }
+  /* on phones, a fixed banner keeps eleven cards from becoming a scroll marathon */
+  .card-banner { flex: 0 0 auto; aspect-ratio: auto; height: 160px; }
+
+  /* 3D rotation can't resize the card to whichever face is showing, so
+     mobile swaps to a plain instant toggle */
+  .flip-scene { perspective: none; }
   .flip-card { height: auto; transition: none; transform: none !important; }
-  .flip-face { position: relative; inset: auto; backface-visibility: visible; display: none; }
+  .flip-face { backface-visibility: visible; display: none; }
   .flip-face-front { display: flex; }
-  .flip-face-back { transform: none; overflow: visible; }
+  .flip-face-back { transform: none; }
   .flip-card.is-flipped .flip-face-front { display: none; }
   .flip-card.is-flipped .flip-face-back { display: flex; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flip-card {
-    transition: none;
-  }
   .flip-card,
-  .flip-card.is-flipped {
-    transform: none;
-  }
-  .flip-face-front { transition: opacity 0.2s ease; }
-  .flip-face-back {
-    position: absolute;
-    inset: 0;
-    transform: none;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  .flip-card.is-flipped .flip-face-front {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .flip-card.is-flipped .flip-face-back {
-    opacity: 1;
-    pointer-events: auto;
-    position: relative;
-  }
+  .flip-card.is-flipped { transition: none; transform: none; }
+  .flip-face { transition: opacity 0.2s ease; }
+  .flip-face-back { transform: none; opacity: 0; pointer-events: none; }
+  .flip-card.is-flipped .flip-face-front { opacity: 0; pointer-events: none; }
+  .flip-card.is-flipped .flip-face-back { opacity: 1; pointer-events: auto; }
 }
