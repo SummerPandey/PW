@@ -252,7 +252,7 @@ const PROJECTS: Project[] = [
     status: "Live",
     desc: "This site — a moody, film-grain, scroll-to-grow portfolio built with Next.js & React.",
     ghUrl: "https://github.com/SummerPandey/PW",
-    demoUrl: "https://summerpandey.vercel.app",
+    demoUrl: "https://summerpandey.com",
     tags: ["nextjs", "react", "typescript"],
     back: {
       sections: [
