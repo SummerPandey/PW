@@ -6,7 +6,7 @@ My personal portfolio site, built with Next.js and TypeScript, featuring an inte
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
 
-Live site: [summerpandey.vercel.app](https://summerpandey.vercel.app)
+Live site: [summerpandey.com](https://summerpandey.com)
 
 ## Overview
 
@@ -19,7 +19,7 @@ The repo also includes Auth.js (GitHub sign-in) and a Drizzle/Postgres schema. T
 - **Panel navigation**: horizontal scroll between About, Welcome, and Works, with keyboard shortcuts (`A`, `H`, `W`).
 - **Interactive duck**: push the duck across the water by dragging, scrolling, swiping, or using the arrow keys. Holding it against the left or right edge navigates to About or Works. It turns to watch the cursor and faces the direction it's moving.
 - **Duck chat**: click the duck to ask questions about my background. Replies come from a Groq-hosted model through `/api/duck-chat`, which validates input (500-character limit), sends the last 8 messages as context, and rate-limits each IP to 20 requests per 10 minutes. Without `GROQ_API_KEY`, the duck responds with a placeholder message.
-- **Works page**: flippable project cards (summary on the front, details on the back) with category filters, plus a résumé strip and a downloadable résumé PDF.
+- **Works page**: flippable project cards (summary on the front, details on the back) with category filters and hand-drawn line art for projects without a photo, plus a résumé strip and a downloadable résumé PDF.
 - **About page**: bento-style grid with roles, project highlights, achievements, skills, and contact links.
 - **Extras**: boot screen, cursor glow, and a Konami code easter egg that triggers confetti and an achievement toast. Animations respect `prefers-reduced-motion`.
 
