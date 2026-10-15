@@ -6,6 +6,9 @@ import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
 import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami, usePrefersReducedMotion } from "./fx";
 import { DuckChat } from "./DuckChat";
+import { PixelWater } from "./scene/PixelWater";
+import { DuckFx, useDuckBody } from "./scene/DuckLife";
+import { SceneDepth } from "./scene/SceneDepth";
 
 export type { Panel } from "./theme";
 
@@ -215,7 +218,20 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
           <div
             key={i}
             onClick={cloud.nav ? () => goTo(cloud.nav as Panel) : undefined}
+            onKeyDown={
+              cloud.nav
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      goTo(cloud.nav as Panel);
+                    }
+                  }
+                : undefined
+            }
             role={cloud.nav ? "button" : undefined}
+            // focusable once it has drifted in far enough to click
+            tabIndex={cloud.nav ? (a > 0.6 ? 0 : -1) : undefined}
+            aria-hidden={cloud.nav ? undefined : true}
             aria-label={cloud.label}
             className={cloud.nav ? "btn-bounce" : undefined}
             style={{
@@ -340,7 +356,7 @@ function LightFall() {
   }, []);
 
   return (
-    <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 2 }}>
+    <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 3 }}>
       {Array.from({ length: count }, (_, i) => (
         <Mote key={i} />
       ))}
@@ -394,6 +410,45 @@ function WaterDuck({
   const draggingRef = useRef(false);
   const [atEdge, setAtEdge] = useState<Panel | null>(null);
 
+  /* The duck's liveliness: a smoothed velocity (drives its lean, wake and
+     flicked droplets) and two counters the scene effects listen to — every
+     bump bumps `splash`, every bit of chatter bumps `quack`. */
+  const [vel, setVel] = useState(0);
+  const [splash, setSplash] = useState(0);
+  const [quack, setQuack] = useState(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // The strip's width in px, so the arrows and the destination sign that
+  // follow the duck can be clamped on screen (on a phone a fixed 96px
+  // offset pushed them past the edge whenever the duck neared a shore).
+  const [stripW, setStripW] = useState(0);
+  useEffect(() => {
+    const el = waterRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setStripW(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const { bump } = useDuckBody({ vel, reducedMotion, target: bodyRef });
+
+  // One shared throttle for the duck's chatter and splashing, so hammering
+  // it (hover spam, ping-ponging off an edge) can't stack up bubbles.
+  const lastQuackRef = useRef(-Infinity);
+  const lastSplashRef = useRef(-Infinity);
+  const chatter = useCallback(() => {
+    const now = performance.now();
+    if (now - lastQuackRef.current < 1600) return false;
+    lastQuackRef.current = now;
+    setQuack((n) => n + 1);
+    return true;
+  }, []);
+  const splashDown = useCallback(() => {
+    const now = performance.now();
+    if (now - lastSplashRef.current < 350) return;
+    lastSplashRef.current = now;
+    setSplash((n) => n + 1);
+  }, []);
+
   const move = useCallback((next: number) => {
     const clamped = Math.max(DUCK_MIN_PCT, Math.min(DUCK_MAX_PCT, next));
     setFacing((f) => (clamped > posRef.current ? "right" : clamped < posRef.current ? "left" : f));
@@ -401,6 +456,55 @@ function WaterDuck({
     setPos(clamped);
     setAtEdge(clamped <= DUCK_MIN_PCT ? "about" : clamped >= DUCK_MAX_PCT ? "works" : null);
   }, []);
+
+  // Track how fast the duck is paddling (% per frame, eased), so the scene
+  // can lean it, trail a wake behind it, and flick water off its back.
+  useEffect(() => {
+    if (active !== "welcome" || reducedMotion) return;
+    let raf = 0;
+    let last = posRef.current;
+    let lastT = 0;
+    let smooth = 0;
+    let published = 0;
+    const tick = (t: number) => {
+      // per 60Hz frame, whatever the screen's real refresh rate
+      const frames = lastT ? Math.min(4, (t - lastT) / (1000 / 60)) : 1;
+      lastT = t;
+      const delta = (posRef.current - last) / Math.max(frames, 0.25);
+      last = posRef.current;
+      smooth += (delta - smooth) * 0.2;
+      if (Math.abs(smooth) < 0.004) smooth = 0;
+      // coarse steps: the springs downstream smooth it, and it keeps
+      // WaterDuck from re-rendering on every frame while it paddles
+      const rounded = Math.round(smooth * 20) / 20;
+      if (rounded !== published) {
+        published = rounded;
+        setVel(rounded);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      setVel(0); // don't leave the duck frozen mid-lean when you leave the panel
+    };
+  }, [active, reducedMotion]);
+
+  // Bumping into a shore: a splash, a hop, and a word about it.
+  useEffect(() => {
+    if (!atEdge) return;
+    splashDown();
+    chatter();
+    bump();
+  }, [atEdge, bump, chatter, splashDown]);
+
+  // The duck lands with a splash the first time it pops onto the water.
+  const landedRef = useRef(false);
+  useEffect(() => {
+    if (landedRef.current || g < 0.42) return;
+    landedRef.current = true;
+    setSplash((n) => n + 1);
+  }, [g]);
 
   // Leaning on an edge sets off on the trip; pull away and it's called off.
   // A timer rather than an rAF ramp, so a throttled tab can't strand the
@@ -485,8 +589,16 @@ function WaterDuck({
   };
 
   const endDrag = () => {
+    // let go mid-paddle and the duck settles back down with a splash
+    if (draggingRef.current && dragMovedRef.current) splashDown();
     draggingRef.current = false;
     setDragging(false);
+  };
+
+  // Hovering the duck makes it hop and quack (not every twitch of the mouse).
+  const onDuckHover = () => {
+    if (draggingRef.current) return;
+    if (chatter()) bump();
   };
 
   // Arrow keys paddle the duck as soon as you're back on the welcome panel —
@@ -513,8 +625,19 @@ function WaterDuck({
       dragMovedRef.current = false;
       return;
     }
+    bump();
+    splashDown();
     onDuckClick();
   };
+
+  /* Arrow and sign placement: follow the duck, but never leave the strip.
+     Before the strip is measured, fall back to plain percentages. */
+  const duckPx = (pos / 100) * stripW;
+  const arrowGap = Math.min(96, stripW * 0.22);
+  const keepIn = (x: number, margin: number) => Math.max(margin, Math.min(stripW - margin, x));
+  const leftArrowX = stripW ? `${keepIn(duckPx - arrowGap, 23)}px` : `calc(${pos}% - 96px)`;
+  const rightArrowX = stripW ? `${keepIn(duckPx + arrowGap, 23)}px` : `calc(${pos}% + 96px)`;
+  const signShift = stripW ? keepIn(duckPx, 60) - duckPx : 0;
 
   /* Which shore the duck is drifting toward, and how close it is — drives
      the little destination sign above its head. */
@@ -530,6 +653,7 @@ function WaterDuck({
       ref={waterRef}
       tabIndex={0}
       role="group"
+      className="duck-strip"
       aria-label="The duck — scroll, drag, or use the arrow keys to paddle it across the water; hold it against the left edge for About me, the right edge for My work"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -541,50 +665,23 @@ function WaterDuck({
         left: 0,
         right: 0,
         height: "clamp(160px, 26vw, 260px)",
-        zIndex: 0,
+        // above the front row of clouds, which would otherwise paint over
+        // the duck in a short browser window
+        zIndex: 2,
         opacity: clamp01((g - 0.1) / 0.3),
         transition: "opacity 0.6s ease",
         // pan-y (not none): lets a touch swipe that starts on the duck still
         // scroll the page vertically. Horizontal drags aren't a native gesture
         // here, so they still reach onPointerMove uncontested.
         touchAction: "pan-y",
-        outline: "none",
         cursor: dragging ? "grabbing" : "grab",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/images/moonlit-pixel-water.png"
-        alt=""
-        draggable={false}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          objectPosition: "center bottom",
-          pointerEvents: "none",
-          userSelect: "none",
-        }}
-      />
+      {/* the water itself — alive: drifting light, a sun path, the duck's wake */}
+      <PixelWater duckX={pos} duckVel={vel} splash={splash} reducedMotion={reducedMotion} />
 
-      {/* ripple, right under the duck's feet */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          bottom: "30%",
-          left: `${pos}%`,
-          transform: "translate(-50%, 50%)",
-          width: "70px",
-          height: "14px",
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(255,255,255,0.28), rgba(255,255,255,0) 70%)",
-          pointerEvents: "none",
-          animation: reducedMotion ? undefined : "ripple-pulse 2.6s ease-in-out infinite",
-        }}
-      />
+      {/* the world past the duck: far islands, a lighthouse, fireflies, the odd leaping fish */}
+      <SceneDepth reducedMotion={reducedMotion} />
 
       {/* left/right hints — flank the duck. A click takes you straight
           there, same as leaning the duck against that edge would. */}
@@ -597,8 +694,8 @@ function WaterDuck({
         style={{
           position: "absolute",
           bottom: "24%",
-          left: `${pos}%`,
-          transform: "translate(calc(-50% - 96px), 50%)",
+          left: leftArrowX,
+          transform: "translate(-50%, 50%)",
           transition: dragging ? "none" : "left 0.14s linear",
           width: "38px",
           height: "38px",
@@ -628,8 +725,8 @@ function WaterDuck({
         style={{
           position: "absolute",
           bottom: "24%",
-          left: `${pos}%`,
-          transform: "translate(calc(-50% + 96px), 50%)",
+          left: rightArrowX,
+          transform: "translate(-50%, 50%)",
           transition: dragging ? "none" : "left 0.14s linear",
           width: "38px",
           height: "38px",
@@ -671,7 +768,7 @@ function WaterDuck({
             position: "absolute",
             bottom: "100%",
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: `translateX(calc(-50% + ${signShift}px))`,
             marginBottom: "8px",
             width: "112px",
             padding: "6px 8px 5px",
@@ -694,7 +791,7 @@ function WaterDuck({
               whiteSpace: "nowrap",
             }}
           >
-            {heading?.side === "left" ? `← ${heading.label}` : `${heading?.label} →`}
+            {heading ? (heading.side === "left" ? `← ${heading.label}` : `${heading.label} →`) : null}
           </div>
           <div style={{ height: "3px", marginTop: "5px", borderRadius: "2px", background: "rgba(255,249,232,0.14)" }}>
             <div
@@ -710,14 +807,22 @@ function WaterDuck({
         </div>
 
         <div className={reducedMotion ? undefined : "duck-bob"} style={{ pointerEvents: "auto" }}>
-          <CodingDuck
-            p={g}
-            awake={duckAwake}
-            onActivate={handleActivate}
-            facing={facing}
-            resumeHref="/Summer_Pandey_Resume.pdf"
-          />
+          {/* body language: leans into its paddling, hops when poked, fidgets when idle */}
+          <div ref={bodyRef} onPointerEnter={onDuckHover} style={{ transformOrigin: "50% 90%" }}>
+            <CodingDuck
+              p={g}
+              awake={duckAwake}
+              onActivate={handleActivate}
+              facing={facing}
+              resumeHref="/Summer_Pandey_Resume.pdf"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* splashes, flicked droplets, and the odd "quack!" */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}>
+        <DuckFx duckX={pos} vel={vel} quack={quack} splash={splash} reducedMotion={reducedMotion} />
       </div>
     </div>
   );

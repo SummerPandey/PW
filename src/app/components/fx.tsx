@@ -92,7 +92,7 @@ export function CodingDuck({
       </g>
 
       {/* "ask me" hint — fades in once the duck has settled, gone once awake */}
-      <g opacity={hintFade} style={{ pointerEvents: "none" }}>
+      <g opacity={hintFade} aria-hidden="true" style={{ pointerEvents: "none" }}>
         <rect x={58} y={86} width={114} height={26} rx={13} fill="#1A1B1B" stroke="#373221" strokeWidth={1.5} />
         <text
           x={115}
@@ -117,6 +117,8 @@ export function CodingDuck({
         style={{ pointerEvents: tagFade > 0.6 ? "auto" : "none" }}
       >
         <g opacity={tagFade} style={{ cursor: "pointer" }}>
+          {/* invisible tap target — the pill alone is ~13px tall on a phone */}
+          <rect x={80} y={296} width={140} height={64} fill="transparent" />
           <rect x={100} y={306} width={100} height={25} rx={12.5} fill="#1A1B1B" />
           <rect x={100} y={306} width={100} height={25} rx={12.5} fill="none" stroke="#373221" strokeWidth={1.5} />
           <text

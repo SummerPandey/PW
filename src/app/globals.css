@@ -401,6 +401,14 @@ body::after {
   }
 }
 
+/* the duck's water strip spans the whole bottom of the screen, so its
+   focus ring is drawn inset, where it can't be clipped by the viewport */
+.duck-strip:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: -6px;
+  border-radius: 14px;
+}
+
 /* the keyboard-shortcut hint means nothing on touch, and on phones it
    sits on top of content */
 @media (pointer: coarse), (max-width: 640px) {
