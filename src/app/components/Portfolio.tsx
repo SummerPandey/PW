@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { C, FONT, SERIF, type Panel } from "./theme";
+import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
+import { C, FONT, SERIF, RESUME_PDF, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
 import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami, usePrefersReducedMotion } from "./fx";
@@ -9,6 +9,7 @@ import { DuckChat } from "./DuckChat";
 import { PixelWater } from "./scene/PixelWater";
 import { DuckFx, useDuckBody } from "./scene/DuckLife";
 import { SceneDepth } from "./scene/SceneDepth";
+import "../styles/welcome.css";
 
 export type { Panel } from "./theme";
 
@@ -22,6 +23,28 @@ export type { Panel } from "./theme";
    ──────────────────────────────────────────────────────────────────── */
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/** Smoothstep from a to b: eases in and out of the hand-off instead of
+    starting and stopping on a hard linear ramp. */
+const ramp = (a: number, b: number, x: number) => {
+  const t = clamp01((x - a) / (b - a));
+  return t * t * (3 - 2 * t);
+};
+
+/* The heavy panels and scene layers only re-render when their own props
+   change, not on every frame of scroll-to-grow (which re-renders the
+   shell). Their props are all stable callbacks or primitives. */
+const AboutPanel = memo(AboutPage);
+const WorkPanel = memo(WorkPage);
+const DuckChatPanel = memo(DuckChat);
+const Boot = memo(BootScreen);
+/* BootScreen does its own cross-fade and marks <html data-boot="done">;
+   the headline entrance keys off that attribute in CSS, so the hand-off
+   needs no React state at all. */
+const noop = () => {};
+const Water = memo(PixelWater);
+const Depth = memo(SceneDepth);
+const DuckEffects = memo(DuckFx);
 
 /** Every panel is exactly one viewport, scrolling its own content. */
 const panelStyle: React.CSSProperties = {
@@ -103,16 +126,18 @@ function CursorGlow() {
         pointerEvents: "none",
         zIndex: 88,
         opacity: 0,
-        transition: "opacity 0.35s ease",
+        transition: "opacity var(--dur-slow) var(--ease-out)",
         willChange: "transform",
       }}
     />
   );
 }
 
+const Glow = memo(CursorGlow);
+
 /* ── CloudPuff — one painterly cloud, optionally with a label ──────── */
 
-function CloudPuff({ label }: { label?: string }) {
+const CloudPuff = memo(function CloudPuff({ label }: { label?: string }) {
   const gradientId = useId();
   return (
     <svg
@@ -135,25 +160,24 @@ function CloudPuff({ label }: { label?: string }) {
         <circle cx="200" cy="94" r="24" />
       </g>
       {/* golden rim-light on top */}
-      <ellipse cx="100" cy="52" rx="30" ry="13" fill="rgba(234,170,34,0.22)" />
+      <ellipse className="cloud-rim" cx="100" cy="52" rx="30" ry="13" fill="rgba(234,170,34,0.22)" />
       {label && (
         <text
           x="120"
           y="92"
           textAnchor="middle"
           dominantBaseline="central"
-          fontFamily={FONT}
           fontSize="22"
           fontWeight="700"
           fill="#FFF9E8"
-          style={{ paintOrder: "stroke", stroke: "rgba(8,9,9,0.85)", strokeWidth: 3.5 }}
+          style={{ fontFamily: FONT, paintOrder: "stroke", stroke: "rgba(8,9,9,0.85)", strokeWidth: 3.5 }}
         >
           {label}
         </text>
       )}
     </svg>
   );
-}
+});
 
 /* ── CloudBank — big overlapping clouds clustered across the top ─────
    They drift in as the duck pops in (g → 1). A few tuck behind
@@ -208,32 +232,23 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
     <>
       {CLOUDS.map((cloud, i) => {
         const a = clamp01((appear - cloud.d) / (1 - cloud.d)); // this cloud's own fade
+        // An ease-out landing, still scroll-linked: each cloud decelerates
+        // into place instead of sliding in and stopping dead.
+        const settle = 1 - (1 - a) ** 3;
         // Nav clouds slide in from their side; the rest drift down into place.
         const fromSide = cloud.x < 50 ? -1 : 1;
         const slide = cloud.label
-          ? `translate(-50%, 0) translateX(${fromSide * (1 - a) * 130}px)`
-          : `translate(-50%, ${(1 - a) * -64}px)`;
+          ? `translate(-50%, 0) translateX(${(fromSide * (1 - settle) * 130).toFixed(2)}px)`
+          : `translate(-50%, ${((1 - settle) * -64).toFixed(2)}px)`;
+        const nav = cloud.nav;
 
         return (
+          // The slot carries the scroll-driven drift with no transition, so
+          // every cloud tracks the sun 1:1. Hover and press live on the
+          // .cloud-nav child, so the two never fight over one transform.
           <div
             key={i}
-            onClick={cloud.nav ? () => goTo(cloud.nav as Panel) : undefined}
-            onKeyDown={
-              cloud.nav
-                ? (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      goTo(cloud.nav as Panel);
-                    }
-                  }
-                : undefined
-            }
-            role={cloud.nav ? "button" : undefined}
-            // focusable once it has drifted in far enough to click
-            tabIndex={cloud.nav ? (a > 0.6 ? 0 : -1) : undefined}
-            aria-hidden={cloud.nav ? undefined : true}
-            aria-label={cloud.label}
-            className={cloud.nav ? "btn-bounce" : undefined}
+            aria-hidden={nav ? undefined : true}
             style={{
               position: "absolute",
               left: `${cloud.x}%`,
@@ -245,13 +260,33 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
               zIndex: cloud.z,
               opacity: a * 0.97,
               transform: slide,
-              pointerEvents: cloud.nav && a > 0.6 ? "auto" : "none",
-              cursor: cloud.nav ? "pointer" : "default",
+              pointerEvents: "none",
             }}
           >
             {/* each cloud bobs at its own pace */}
             <div className="cloud-float" style={{ "--float": `${cloud.s}s` } as React.CSSProperties}>
-              <CloudPuff label={cloud.label} />
+              {nav ? (
+                <div
+                  className="cloud-nav"
+                  role="button"
+                  tabIndex={0}
+                  // out of the tab order, the pointer's way and the
+                  // accessibility tree until it has drifted in
+                  inert={a < 0.6 || undefined}
+                  aria-label={cloud.label}
+                  onClick={() => goTo(nav)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      goTo(nav);
+                    }
+                  }}
+                >
+                  <CloudPuff label={cloud.label} />
+                </div>
+              ) : (
+                <CloudPuff />
+              )}
             </div>
           </div>
         );
@@ -261,13 +296,15 @@ function CloudBank({ g, goTo }: { g: number; goTo: (p: Panel) => void }) {
 }
 
 /* ── LightFall — motes of sunlight drifting down like golden snow ────
-   Hover a mote and it pops into the cursor, then respawns up top. ── */
+   Hover (or tap) a mote and it lifts, rings and sparks into the
+   cursor, then respawns up top. ── */
 
 type MoteCfg = {
   left: number; // starting column, %
   size: number; // px
   opacity: number; // depth tier: dimmer = farther
   glow: boolean; // only the nearest tier glows
+  tier: 0 | 1 | 2; // 0 = farthest
   fallDuration: number; // s
   fallDelay: number; // s (negative = already mid-fall)
   swayDuration: number; // s
@@ -284,13 +321,15 @@ const MOTE_TIERS = [
 ] as const;
 
 function spawnMote(midFall: boolean): MoteCfg {
-  const tier = MOTE_TIERS[Math.random() < 0.45 ? 0 : Math.random() < 0.65 ? 1 : 2];
+  const tierIndex: MoteCfg["tier"] = Math.random() < 0.45 ? 0 : Math.random() < 0.65 ? 1 : 2;
+  const tier = MOTE_TIERS[tierIndex];
   const pick = ([lo, hi]: readonly [number, number]) => lo + Math.random() * (hi - lo);
   return {
     left: 6 + Math.random() * 88,
     size: pick(tier.size),
     opacity: tier.opacity,
     glow: tier.glow,
+    tier: tierIndex,
     fallDuration: pick(tier.fall),
     // On first render, scatter motes mid-fall; respawns start from the top.
     fallDelay: midFall ? -Math.random() * 18 : -Math.random() * 1.5,
@@ -299,13 +338,27 @@ function spawnMote(midFall: boolean): MoteCfg {
   };
 }
 
+/** Six sparks thrown off a caught mote, as unit vectors around a hexagon. */
+const CATCH_SPARKS = [
+  [0, -1],
+  [0.87, -0.5],
+  [0.87, 0.5],
+  [0, 1],
+  [-0.87, 0.5],
+  [-0.87, -0.5],
+] as const;
+const SPARK_REACH = 20; // px
+
 function Mote() {
   const [cfg, setCfg] = useState<MoteCfg | null>(null);
-  const [absorbing, setAbsorbing] = useState(false);
+  const [caught, setCaught] = useState(false);
 
   // Spawn client-side only, so server and browser markup agree.
   useEffect(() => setCfg(spawnMote(true)), []);
   if (!cfg) return null;
+
+  const catchIt = () => setCaught(true);
+  const playState = caught ? "paused" : "running";
 
   return (
     // outer layer: the fall; middle layer: the sway; inner: the glowing dot
@@ -315,40 +368,59 @@ function Mote() {
         left: `${cfg.left}%`,
         top: 0,
         animation: `mote-fall ${cfg.fallDuration}s linear ${cfg.fallDelay}s infinite`,
-        animationPlayState: absorbing ? "paused" : "running",
+        animationPlayState: playState,
       }}
     >
       <div
         style={{
           animation: `mote-sway ${cfg.swayDuration}s ease-in-out ${cfg.swayDelay}s infinite`,
-          animationPlayState: absorbing ? "paused" : "running",
+          animationPlayState: playState,
         }}
       >
-        <div
-          onMouseEnter={() => setAbsorbing(true)}
-          onAnimationEnd={(e) => {
-            if (e.animationName === "mote-absorb") {
-              setCfg(spawnMote(false)); // pop! respawn at the top
-              setAbsorbing(false);
-            }
-          }}
-          style={{
-            width: `${cfg.size}px`,
-            height: `${cfg.size}px`,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(255,212,71,0.9), rgba(234,170,34,0.45) 45%, transparent 72%)",
-            boxShadow: cfg.glow ? "0 0 8px rgba(234,170,34,0.5)" : undefined,
-            opacity: cfg.opacity,
-            pointerEvents: "auto",
-            animation: absorbing ? "mote-absorb 0.5s cubic-bezier(0.34,1.7,0.5,1) forwards" : undefined,
-          }}
-        />
+        {/* the halo and sparks are siblings of the dot, not children, so
+            they don't shrink away with it while it is absorbed */}
+        <div style={{ position: "relative", width: `${cfg.size}px`, height: `${cfg.size}px` }}>
+          <div
+            className={caught ? "mote-dot is-caught" : "mote-dot"}
+            data-tier={cfg.tier}
+            // a mouse catches on contact; touch and pen catch on a tap
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") catchIt();
+            }}
+            onPointerDown={catchIt}
+            onAnimationEnd={(e) => {
+              if (e.animationName === "mote-catch") {
+                setCfg(spawnMote(false)); // respawn at the top
+                setCaught(false);
+              }
+            }}
+            style={{
+              width: `${cfg.size}px`,
+              height: `${cfg.size}px`,
+              background: "radial-gradient(circle, rgba(255,212,71,0.9), rgba(234,170,34,0.45) 45%, transparent 72%)",
+              boxShadow: cfg.glow ? "0 0 8px rgba(234,170,34,0.5)" : undefined,
+              opacity: cfg.opacity,
+            }}
+          />
+          {caught && (
+            <>
+              <span className="mote-halo" />
+              {CATCH_SPARKS.map(([dx, dy], i) => (
+                <span
+                  key={i}
+                  className="mote-spark"
+                  style={{ "--dx": `${dx * SPARK_REACH}px`, "--dy": `${dy * SPARK_REACH}px` } as React.CSSProperties}
+                />
+              ))}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function LightFall() {
+const LightFall = memo(function LightFall() {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -356,13 +428,13 @@ function LightFall() {
   }, []);
 
   return (
-    <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 3 }}>
+    <div aria-hidden className="light-fall">
       {Array.from({ length: count }, (_, i) => (
         <Mote key={i} />
       ))}
     </div>
   );
-}
+});
 
 /* ── Welcome — the center landing panel ──────────────────────────────
    Scrolling down (p: 0 → 1) pops in a coding duck while the sun rises
@@ -384,6 +456,10 @@ const EDGE_HOLD_MS = 560;
 /** The duck outruns your cursor a little when dragged, so crossing the
     water doesn't take a swipe the full width of the screen. */
 const DRAG_GAIN = 1.7;
+
+/** Time constant of the scroll-to-grow follow. 96ms matches the old
+    0.16-per-frame lerp at 60Hz, now independent of refresh rate. */
+const GROWTH_TAU_MS = 96;
 
 function WaterDuck({
   g,
@@ -635,9 +711,48 @@ function WaterDuck({
   const duckPx = (pos / 100) * stripW;
   const arrowGap = Math.min(96, stripW * 0.22);
   const keepIn = (x: number, margin: number) => Math.max(margin, Math.min(stripW - margin, x));
-  const leftArrowX = stripW ? `${keepIn(duckPx - arrowGap, 23)}px` : `calc(${pos}% - 96px)`;
-  const rightArrowX = stripW ? `${keepIn(duckPx + arrowGap, 23)}px` : `calc(${pos}% + 96px)`;
   const signShift = stripW ? keepIn(duckPx, 60) - duckPx : 0;
+
+  /* Everything that follows the duck moves on `transform` (composited),
+     not `left` (layout). Before the strip is measured, fall back to plain
+     percentages on `left`; that only happens while the strip is hidden. */
+  const follow = (x: number, fallback: string, tail: string): React.CSSProperties =>
+    stripW
+      ? { left: 0, transform: `translate3d(${x.toFixed(1)}px, 0, 0) ${tail}` }
+      : { left: fallback, transform: tail };
+  // "transform 0s", not "none": it has to stay valid inside the arrows'
+  // transition list, or a press would drop every transition on them
+  const followTransition = dragging ? "transform 0s" : "transform 140ms var(--ease-out)";
+  const leftArrowPos = follow(keepIn(duckPx - arrowGap, 23), `calc(${pos}% - 96px)`, "translate(-50%, 50%)");
+  const rightArrowPos = follow(keepIn(duckPx + arrowGap, 23), `calc(${pos}% + 96px)`, "translate(-50%, 50%)");
+  const duckPos = follow(duckPx, `${pos}%`, "translateX(-50%)");
+
+  // The strip stays out of the way (pointer, tab order) until it has
+  // faded in; the arrows likewise wait for their own fade.
+  const waterIn = ramp(0.1, 0.4, g);
+  const arrowsIn = ramp(0.3, 0.5, g);
+  const stripLive = waterIn > 0.05;
+  const arrowsLive = arrowsIn > 0.5;
+  const arrowStyle: React.CSSProperties = {
+    position: "absolute",
+    bottom: "24%",
+    transition: followTransition + ", scale var(--dur-fast) var(--ease-out)",
+    width: "38px",
+    height: "38px",
+    borderRadius: "50%",
+    border: `2px solid ${C.leaf}`,
+    color: C.leaf,
+    fontSize: "16px",
+    fontWeight: 700,
+    lineHeight: 1,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: arrowsIn,
+    pointerEvents: arrowsLive ? "auto" : "none",
+    zIndex: 2,
+  };
 
   /* Which shore the duck is drifting toward, and how close it is — drives
      the little destination sign above its head. */
@@ -654,22 +769,33 @@ function WaterDuck({
       tabIndex={0}
       role="group"
       className="duck-strip"
-      aria-label="The duck — scroll, drag, or use the arrow keys to paddle it across the water; hold it against the left edge for About me, the right edge for My work"
+      aria-label="The duck — scroll, drag, or use the arrow keys to paddle it across the water; hold it against the left edge for About me, the right edge for My work. Press Enter to chat with the duck."
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivate();
+        }
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      inert={!stripLive || undefined}
       style={{
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        height: "clamp(160px, 26vw, 260px)",
+        height: "var(--water-h)",
         // above the front row of clouds, which would otherwise paint over
         // the duck in a short browser window
         zIndex: 2,
-        opacity: clamp01((g - 0.1) / 0.3),
-        transition: "opacity 0.6s ease",
+        // no CSS transition here: the growth follow already eases this,
+        // and a transition re-targeted every frame made the water trail
+        // the headline
+        opacity: waterIn,
+        pointerEvents: stripLive ? "auto" : "none",
         // pan-y (not none): lets a touch swipe that starts on the duck still
         // scroll the page vertically. Horizontal drags aren't a native gesture
         // here, so they still reach onPointerMove uncontested.
@@ -678,72 +804,34 @@ function WaterDuck({
       }}
     >
       {/* the water itself — alive: drifting light, a sun path, the duck's wake */}
-      <PixelWater duckX={pos} duckVel={vel} splash={splash} reducedMotion={reducedMotion} />
+      <Water duckX={pos} duckVel={vel} splash={splash} reducedMotion={reducedMotion} paused={!stripLive} />
 
       {/* the world past the duck: far islands, a lighthouse, fireflies, the odd leaping fish */}
-      <SceneDepth reducedMotion={reducedMotion} />
+      <Depth reducedMotion={reducedMotion} paused={!stripLive} />
 
       {/* left/right hints — flank the duck. A click takes you straight
           there, same as leaning the duck against that edge would. */}
       <button
+        className="water-arrow"
         aria-label="Go to About me"
+        tabIndex={arrowsLive ? 0 : -1}
         onClick={() => {
           setFacing("left");
           goTo("about");
         }}
-        style={{
-          position: "absolute",
-          bottom: "24%",
-          left: leftArrowX,
-          transform: "translate(-50%, 50%)",
-          transition: dragging ? "none" : "left 0.14s linear",
-          width: "38px",
-          height: "38px",
-          borderRadius: "50%",
-          border: `2px solid ${C.leaf}`,
-          background: "rgba(8,9,9,0.55)",
-          color: C.leaf,
-          fontSize: "16px",
-          fontWeight: 700,
-          lineHeight: 1,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: clamp01((g - 0.3) / 0.2),
-          zIndex: 2,
-        }}
+        style={{ ...arrowStyle, ...leftArrowPos }}
       >
         ←
       </button>
       <button
+        className="water-arrow"
         aria-label="Go to My work"
+        tabIndex={arrowsLive ? 0 : -1}
         onClick={() => {
           setFacing("right");
           goTo("works");
         }}
-        style={{
-          position: "absolute",
-          bottom: "24%",
-          left: rightArrowX,
-          transform: "translate(-50%, 50%)",
-          transition: dragging ? "none" : "left 0.14s linear",
-          width: "38px",
-          height: "38px",
-          borderRadius: "50%",
-          border: `2px solid ${C.leaf}`,
-          background: "rgba(8,9,9,0.55)",
-          color: C.leaf,
-          fontSize: "16px",
-          fontWeight: 700,
-          lineHeight: 1,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: clamp01((g - 0.3) / 0.2),
-          zIndex: 2,
-        }}
+        style={{ ...arrowStyle, ...rightArrowPos }}
       >
         →
       </button>
@@ -752,10 +840,9 @@ function WaterDuck({
         style={{
           position: "absolute",
           bottom: "24%",
-          left: `${pos}%`,
           width: "min(190px, 38vw)",
-          transform: "translateX(-50%)",
-          transition: dragging ? "none" : "left 0.14s linear",
+          ...duckPos,
+          transition: followTransition,
           pointerEvents: "none",
           zIndex: 1,
         }}
@@ -776,7 +863,7 @@ function WaterDuck({
             background: "rgba(8,9,9,0.82)",
             border: `1px solid ${atEdge ? C.leaf : C.border}`,
             opacity: heading ? 0.3 + 0.7 * heading.nearness : 0,
-            transition: "opacity 0.25s ease, border-color 0.25s ease",
+            transition: "opacity var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out)",
             pointerEvents: "none",
           }}
         >
@@ -787,20 +874,33 @@ function WaterDuck({
               letterSpacing: "0.06em",
               textAlign: "center",
               color: atEdge ? C.leaf : C.moss,
-              transition: "color 0.25s ease",
+              transition: "color var(--dur-base) var(--ease-out)",
               whiteSpace: "nowrap",
             }}
           >
             {heading ? (heading.side === "left" ? `← ${heading.label}` : `${heading.label} →`) : null}
           </div>
-          <div style={{ height: "3px", marginTop: "5px", borderRadius: "2px", background: "rgba(255,249,232,0.14)" }}>
+          <div
+            style={{
+              height: "3px",
+              marginTop: "5px",
+              borderRadius: "2px",
+              background: "rgba(255,249,232,0.14)",
+              overflow: "hidden",
+            }}
+          >
+            {/* fills toward the shore it is heading for; scaleX, not width,
+                so the charge never relayouts */}
             <div
               style={{
                 height: "100%",
-                width: atEdge ? "100%" : "0%",
-                borderRadius: "2px",
+                width: "100%",
                 background: C.leaf,
-                transition: atEdge ? `width ${EDGE_HOLD_MS}ms linear` : "width 0.18s ease-out",
+                transform: `scaleX(${atEdge ? 1 : 0})`,
+                transformOrigin: heading?.side === "left" ? "right" : "left",
+                transition: atEdge
+                  ? `transform ${EDGE_HOLD_MS}ms linear`
+                  : "transform var(--dur-base) var(--ease-out)",
               }}
             />
           </div>
@@ -814,7 +914,7 @@ function WaterDuck({
               awake={duckAwake}
               onActivate={handleActivate}
               facing={facing}
-              resumeHref="/Summer_Pandey_Resume.pdf"
+              resumeHref={RESUME_PDF}
             />
           </div>
         </div>
@@ -822,7 +922,7 @@ function WaterDuck({
 
       {/* splashes, flicked droplets, and the odd "quack!" */}
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}>
-        <DuckFx duckX={pos} vel={vel} quack={quack} splash={splash} reducedMotion={reducedMotion} />
+        <DuckEffects duckX={pos} vel={vel} quack={quack} splash={splash} reducedMotion={reducedMotion} />
       </div>
     </div>
   );
@@ -842,9 +942,12 @@ function Welcome({
   active: Panel;
 }) {
   const g = clamp01(p);
+  const sunY = (-60 * g).toFixed(2);
   return (
-    <div style={{ height: "240vh", position: "relative" }}>
+    <div className="welcome" style={{ height: "240vh", position: "relative" }}>
+      {/* the light-fall clip only applies once the water is actually there */}
       <div
+        className={g > 0.1 ? "welcome-stage water-in" : "welcome-stage"}
         style={{
           position: "sticky",
           top: 0,
@@ -856,19 +959,23 @@ function Welcome({
           justifyContent: "center",
         }}
       >
-        {/* sun — crowns the headline, then rises & brightens with scroll */}
+        {/* sun — crowns the headline, then rises & brightens with scroll.
+            A pre-blurred halo and a disc, both moved on the compositor:
+            the light spreads as the sun climbs. */}
         <div
+          aria-hidden
+          className="welcome-halo"
           style={{
-            position: "absolute",
-            top: `${78 - 60 * g}px`,
-            left: "50%",
-            transform: `translateX(-50%) scale(${0.8 + 0.55 * g})`,
-            width: "120px",
-            height: "120px",
-            borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(255,212,71,${0.85 + 0.15 * g}), rgba(234,170,34,${0.55 + 0.45 * g}))`,
-            boxShadow: `0 0 ${46 + 180 * g}px rgba(234,170,34,${0.28 + 0.4 * g})`,
-            zIndex: 2,
+            transform: `translate3d(0, ${sunY}px, 0) scale(${(0.42 + 0.58 * g).toFixed(4)})`,
+            opacity: 0.62 + 0.38 * g,
+          }}
+        />
+        <div
+          aria-hidden
+          className="welcome-sun"
+          style={{
+            transform: `translate3d(0, ${sunY}px, 0) scale(${(0.5926 + 0.4074 * g).toFixed(4)})`,
+            opacity: 0.86 + 0.14 * g,
           }}
         />
 
@@ -885,13 +992,16 @@ function Welcome({
             zIndex: 3,
             textAlign: "center",
             padding: "0 24px",
-            transform: `translateY(calc(-6vh - ${46 * g}px))`,
-            opacity: Math.max(0, 1 - g * 2),
+            transform: `translateY(calc(-6vh - ${(46 * g).toFixed(2)}px))`,
+            opacity: 1 - ramp(0.04, 0.42, g),
             pointerEvents: g > 0.3 ? "none" : "auto",
           }}
         >
-          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: C.wood }}>
-            Hello, I&apos;m Summer
+          <div
+            className="wl"
+            style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: C.wood }}
+          >
+            Hello, I&apos;m Summer Pandey
           </div>
           <h1
             className="serif"
@@ -903,25 +1013,59 @@ function Welcome({
               color: C.dark,
               margin: "16px 0 0",
               letterSpacing: "-0.022em",
+              textWrap: "balance",
             }}
           >
-            Welcome to my
-            <br />
-            <span
-              style={{
-                // sunlit to the last letter; `clone` repeats the full sweep on
-                // each line when the phrase wraps on a phone
-                backgroundImage: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
-                WebkitBoxDecorationBreak: "clone",
-                boxDecorationBreak: "clone",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              room of ideas
+            {/* two lines, each rising on its own beat; the {" "} keeps the
+                accessible name "Welcome to my room of ideas" */}
+            <span className="wl wl-a wl-line">Welcome to my</span>{" "}
+            <span className="wl wl-b wl-line">
+              <span
+                style={{
+                  // sunlit to the last letter; `clone` repeats the full sweep on
+                  // each line when the phrase wraps on a phone
+                  backgroundImage: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
+                  WebkitBoxDecorationBreak: "clone",
+                  boxDecorationBreak: "clone",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                room of ideas
+              </span>
             </span>
           </h1>
+          <p
+            className="wl wl-c"
+            style={{
+              margin: "14px auto 0",
+              maxWidth: "34em",
+              fontFamily: FONT,
+              fontSize: "clamp(14px, 1.6vw, 17px)",
+              fontWeight: 600,
+              lineHeight: 1.5,
+              color: C.moss,
+              letterSpacing: "0.01em",
+              textWrap: "balance",
+            }}
+          >
+            Software engineer &amp; AI/ML builder · CS + Data Science at Augustana
+          </p>
+          {/* out of the tab order once the headline has faded away */}
+          <div className="wl wl-c hero-actions" inert={g > 0.3 || undefined}>
+            <button type="button" className="btn-quiet btn-gold hero-action" onClick={() => goTo("works")}>
+              See my work <span aria-hidden>→</span>
+            </button>
+            <a
+              className="btn-quiet hero-action hero-action--ghost"
+              href={RESUME_PDF}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Résumé <span aria-hidden>↗</span>
+            </a>
+          </div>
         </div>
 
         {/* water — the duck floats here and can be dragged/scrolled/keyed around */}
@@ -929,6 +1073,7 @@ function Welcome({
 
         {/* scroll cue — only before you start scrolling, then gone */}
         <div
+          aria-hidden
           style={{
             position: "absolute",
             bottom: "22px",
@@ -938,11 +1083,17 @@ function Welcome({
             letterSpacing: "0.18em",
             textTransform: "uppercase",
             color: C.muted,
-            opacity: Math.max(0, 1 - g * 4),
+            opacity: 1 - ramp(0, 0.2, g),
+            transform: `translateY(${(8 * ramp(0, 0.2, g)).toFixed(2)}px)`,
             pointerEvents: "none",
           }}
         >
-          ↓ scroll to grow
+          {/* arrives just after the headline, on the same entrance */}
+          <span className="wl wl-cue" style={{ display: "inline-block" }}>
+            <span className="scroll-cue-arrow" style={{ animationPlayState: g > 0.2 ? "paused" : "running" }}>
+              ↓
+            </span> scroll to grow
+          </span>
         </div>
       </div>
     </div>
@@ -958,35 +1109,59 @@ export function Portfolio() {
   const [toast, setToast] = useState<string | null>(null);
   const [active, setActive] = useState<Panel>("welcome");
   const [duckChatOpen, setDuckChatOpen] = useState(false);
+  const openDuckChat = useCallback(() => setDuckChatOpen(true), []);
+  const closeDuckChat = useCallback(() => setDuckChatOpen(false), []);
 
-  /* Duck growth. The welcome panel's scroll position is the
-     target; an rAF loop eases toward it so the duck glides in instead
-     of snapping per wheel-notch. */
+  /* Panel changes are silent to assistive tech otherwise: announce each
+     one (but not the initial panel) through a polite live region. */
+  const [announce, setAnnounce] = useState("");
+  const announcedOnce = useRef(false);
+  useEffect(() => {
+    if (!announcedOnce.current) {
+      announcedOnce.current = true;
+      return;
+    }
+    setAnnounce({ about: "About me", welcome: "Welcome", works: "My work" }[active] + " panel");
+  }, [active]);
+
+  /* Duck growth. The welcome panel's scroll position is the target; an
+     rAF loop follows it on a time constant (not a per-frame lerp), so
+     the duck glides in at the same speed at 60, 120 or 144Hz. */
   const [growth, setGrowth] = useState(0);
   const targetRef = useRef(0);
   const currentRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const lastTickRef = useRef(0);
+  const snapRef = useRef(false); // reduced motion: land on the target at once
 
-  const ease = useCallback(() => {
+  const ease = useCallback((t: number) => {
+    // capped, so returning from a background tab can't jump
+    const dt = lastTickRef.current ? Math.min(50, t - lastTickRef.current) : 1000 / 60;
+    lastTickRef.current = t;
     const target = targetRef.current;
-    const current = currentRef.current;
-    const next = current + (target - current) * 0.16;
-
+    const k = snapRef.current ? 1 : 1 - Math.exp(-dt / GROWTH_TAU_MS);
+    let next = currentRef.current + (target - currentRef.current) * k;
     // Close enough — land exactly on target and stop the loop.
-    if (Math.abs(target - next) < 0.0006) {
-      currentRef.current = target;
-      setGrowth(target);
-      rafRef.current = null;
-      return;
-    }
+    if (Math.abs(target - next) < 0.0006) next = target;
     currentRef.current = next;
     setGrowth(next);
+    if (next === target) {
+      rafRef.current = null;
+      lastTickRef.current = 0;
+      return;
+    }
     rafRef.current = requestAnimationFrame(ease);
   }, []);
 
   useEffect(() => {
     const el = welcomeRef.current;
     if (!el) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    snapRef.current = still.matches;
+    const onMotionPref = () => {
+      snapRef.current = still.matches;
+    };
+    still.addEventListener("change", onMotionPref);
     const onScroll = () => {
       const max = el.scrollHeight - el.clientHeight;
       targetRef.current = max > 0 ? el.scrollTop / max : 0;
@@ -996,7 +1171,9 @@ export function Portfolio() {
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       el.removeEventListener("scroll", onScroll);
+      still.removeEventListener("change", onMotionPref);
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     };
   }, [ease]);
 
@@ -1077,16 +1254,30 @@ export function Portfolio() {
     color: active === panel ? C.leaf : C.muted,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
-    transition: "color 0.25s ease",
+    transition: "color var(--dur-base) var(--ease-out)",
   });
 
   return (
     <div className="size-full" style={{ fontFamily: FONT, background: "transparent", height: "100vh", overflow: "hidden" }}>
-      <BootScreen onDone={() => {}} />
-      <CursorGlow />
+      <a
+        href="#panel-works"
+        className="skip-link"
+        onClick={(e) => {
+          e.preventDefault();
+          goTo("works");
+          document.getElementById("panel-works")?.focus({ preventScroll: true });
+        }}
+      >
+        Skip to my work
+      </a>
+      <Boot onDone={noop} />
+      <Glow />
       <Confetti active={confetti} />
       <Toast text={toast} />
-      <DuckChat open={duckChatOpen} onClose={() => setDuckChatOpen(false)} />
+      <p className="sr-only" aria-live="polite" role="status">
+        {announce}
+      </p>
+      <DuckChatPanel open={duckChatOpen} onClose={closeDuckChat} />
 
       {/* ── global top bar ── */}
       <nav
@@ -1098,6 +1289,7 @@ export function Portfolio() {
           zIndex: 50,
           background: "rgba(8,9,9,0.82)",
           backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
           borderBottom: `1px solid ${C.border}`,
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
@@ -1106,11 +1298,20 @@ export function Portfolio() {
           height: "54px",
         }}
       >
-        <button className="navlink" style={{ ...navBtn("about"), justifySelf: "start" }} onClick={() => goTo("about")}>
+        <button
+          className="navlink"
+          style={{ ...navBtn("about"), justifySelf: "start" }}
+          onClick={() => goTo("about")}
+          aria-current={active === "about" ? "page" : undefined}
+          aria-keyshortcuts="a"
+        >
           ← About
         </button>
         <button
           onClick={() => goTo("welcome")}
+          aria-label="Home"
+          aria-current={active === "welcome" ? "page" : undefined}
+          aria-keyshortcuts="h"
           style={{
             justifySelf: "center",
             display: "flex",
@@ -1126,7 +1327,13 @@ export function Portfolio() {
           </span>
           <Clock />
         </button>
-        <button className="navlink" style={{ ...navBtn("works"), justifySelf: "end" }} onClick={() => goTo("works")}>
+        <button
+          className="navlink"
+          style={{ ...navBtn("works"), justifySelf: "end" }}
+          onClick={() => goTo("works")}
+          aria-current={active === "works" ? "page" : undefined}
+          aria-keyshortcuts="w"
+        >
           Works →
         </button>
       </nav>
@@ -1143,20 +1350,20 @@ export function Portfolio() {
           scrollSnapType: "x mandatory",
         }}
       >
-        <section id="panel-about" style={panelStyle}>
-          <AboutPage goTo={goTo} />
+        <section id="panel-about" aria-label="About me" tabIndex={-1} style={panelStyle}>
+          <AboutPanel goTo={goTo} />
         </section>
-        <section id="panel-welcome" ref={welcomeRef} style={panelStyle}>
+        <section id="panel-welcome" ref={welcomeRef} aria-label="Welcome" tabIndex={-1} style={panelStyle}>
           <Welcome
             goTo={goTo}
             p={growth}
             duckAwake={duckChatOpen}
-            onDuckClick={() => setDuckChatOpen(true)}
+            onDuckClick={openDuckChat}
             active={active}
           />
         </section>
-        <section id="panel-works" style={panelStyle}>
-          <WorkPage goTo={goTo} />
+        <section id="panel-works" aria-label="My work" tabIndex={-1} style={panelStyle}>
+          <WorkPanel goTo={goTo} />
         </section>
       </div>
 
@@ -1169,8 +1376,8 @@ export function Portfolio() {
           bottom: "14px",
           left: "14px",
           zIndex: 70,
-          opacity: active === "welcome" ? 1 : 0,
-          transition: "opacity 0.2s ease",
+          opacity: active === "welcome" ? 1 : 0.7,
+          transition: "opacity var(--dur-base) var(--ease-out)",
           fontFamily: FONT,
           fontSize: "11px",
           fontWeight: 600,
@@ -1181,7 +1388,9 @@ export function Portfolio() {
           userSelect: "none",
         }}
       >
-        [A] About · [H] Home · [W] Works
+        <span className={active === "about" ? "kbd-key is-on" : "kbd-key"}>[A] About</span> ·{" "}
+        <span className={active === "welcome" ? "kbd-key is-on" : "kbd-key"}>[H] Home</span> ·{" "}
+        <span className={active === "works" ? "kbd-key is-on" : "kbd-key"}>[W] Works</span>
       </div>
     </div>
   );

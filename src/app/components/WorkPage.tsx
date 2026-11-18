@@ -1,9 +1,11 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Github,
+  ArrowLeft,
   ArrowUpRight,
+  Mail,
   Activity,
   Stethoscope,
   Coins,
@@ -16,10 +18,11 @@ import {
   BarChart3,
   Cast,
   CircleDot,
+  FileText,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, EYEBROW, type Panel } from "./theme";
+import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, EYEBROW, RESUME_PDF, MAILTO, type Panel } from "./theme";
 import { Reveal } from "./fx";
 import {
   ART_FIELD,
@@ -34,6 +37,7 @@ import {
   VolleyballArt,
   MMMArt,
 } from "./ProjectArt";
+import "../styles/works.css";
 
 /* ────────────────────────────────────────────────────────────────────
    WorkPage — the project garden: flippable project cards (front =
@@ -65,6 +69,8 @@ type Project = {
   ghUrl?: string; // omitted when no confirmed/public repo exists
   demoUrl?: string; // omitted when nothing is actually deployed
   devpostUrl?: string; // omitted when no writeup exists
+  metric?: { value: string; label: string }; // only real, sourced numbers
+  when?: string; // timeline/context line on the case sheet
   back: {
     sections: BackSection[];
     tech: string;
@@ -81,6 +87,8 @@ const PROJECTS: Project[] = [
     photo: "/images/jetson-device.jpg",
     tags: ["python", "computer-vision", "jetson", "gemini-ai"],
     ghUrl: "https://github.com/SummerPandey/Argus_0.1",
+    metric: { value: "4", label: "safety workflows, on-device" },
+    when: "Jun 2026 – present",
     back: {
       sections: [
         {
@@ -113,6 +121,8 @@ const PROJECTS: Project[] = [
     tags: ["typescript", "react", "supabase", "postgresql", "ai"],
     ghUrl: "https://github.com/SummerPandey/Venture_Gain",
     demoUrl: "https://venture-gain.vercel.app",
+    metric: { value: "20+", label: "active users" },
+    when: "Jan – Jun 2026",
     back: {
       sections: [
         {
@@ -144,6 +154,7 @@ const PROJECTS: Project[] = [
     photo: "/images/team-photo-2.jpg",
     tags: ["flutter", "firebase", "gemini-ai", "health-tech"],
     devpostUrl: "https://devpost.com/software/preventia-sblncy",
+    when: "Mar 2026 · HackAugie",
     back: {
       sections: [
         {
@@ -174,6 +185,7 @@ const PROJECTS: Project[] = [
     status: "Prototype",
     desc: "A machine-learning pipeline that scores sentiment in cryptocurrency news and social-media discussions.",
     tags: ["python", "roberta", "vader", "nlp"],
+    metric: { value: "72%", label: "accuracy on labeled data" },
     back: {
       sections: [
         {
@@ -234,6 +246,7 @@ const PROJECTS: Project[] = [
     status: "Prototype",
     desc: "A Chrome extension that logs workouts from plain language, cutting manual entry time.",
     tags: ["chrome-extension", "openai", "nodejs"],
+    metric: { value: "40%", label: "less manual entry" },
     back: {
       sections: [
         {
@@ -290,6 +303,7 @@ const PROJECTS: Project[] = [
     status: "Prototype",
     desc: "A streaming app with autoplay channels and personalized recommendations, built for the CS SI course.",
     tags: ["flutter", "firebase", "youtube-api"],
+    when: "CS SI course project",
     back: {
       sections: [
         {
@@ -343,17 +357,20 @@ const TABS: Filter[] = ["All Projects", "AI/ML", "Backend", "Frontend", "NLP", "
 
 const STATUS_STYLE: Record<Status, { bg: string; color: string }> = {
   Prototype: { bg: "rgba(255,255,255,0.14)", color: C.cream },
-  Live: { bg: "rgba(90,200,120,0.22)", color: "#8fe3a8" },
+  Live: { bg: "rgba(255,249,232,0.14)", color: C.cream },
   "Award Winner": { bg: "rgba(255,212,71,0.22)", color: "#FFD447" },
   "In Development": { bg: "rgba(234,170,34,0.2)", color: C.sun },
 };
 
-const SKILLS = [
-  "Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart",
-  "React", "Node.js", "Express.js", "Flutter",
-  "AWS", "PostgreSQL", "Supabase", "Firebase", "MongoDB",
-  "Docker", "Kubernetes", "Git",
-  "PyTorch", "TensorFlow", "scikit-learn", "NVIDIA Jetson", "Gemini API",
+// The toolbox, grouped so 26 names read as four short rows instead of one wall.
+const TOOLBOX: { label: string; items: string[] }[] = [
+  { label: "Languages", items: ["Python", "TypeScript", "JavaScript", "Java", "C++", "C", "SQL", "Rust", "Dart"] },
+  { label: "Frameworks", items: ["React", "Node.js", "Express.js", "Flutter"] },
+  {
+    label: "Cloud, data & DevOps",
+    items: ["AWS", "PostgreSQL", "Supabase", "Firebase", "MongoDB", "Docker", "Kubernetes", "Git"],
+  },
+  { label: "ML & hardware", items: ["PyTorch", "TensorFlow", "scikit-learn", "NVIDIA Jetson", "Gemini API"] },
 ];
 
 function countFor(filter: Filter) {
@@ -361,10 +378,17 @@ function countFor(filter: Filter) {
   return PROJECTS.filter((p) => p.cats.includes(filter)).length;
 }
 
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** A CSS custom property for the case-sheet stagger index. */
+const stagger = (i: number) => ({ "--i": i }) as React.CSSProperties;
+
 /* ── card pieces ───────────────────────────────────────────────────── */
 
-/** External-link buttons on the card back — GitHub, live demo, Devpost
-    writeup — only rendered when a real URL exists for that project. */
+/** External-link buttons on the card back — live demo (the primary
+    action, so it leads), GitHub, Devpost writeup — only rendered when a
+    real URL exists for that project. */
 function LinkButtons({
   p,
   onLinkClick,
@@ -374,33 +398,8 @@ function LinkButtons({
   onLinkClick: (e: React.MouseEvent) => void;
   tabIndex: number;
 }) {
-  const btnStyle: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    borderRadius: "999px",
-    padding: "8px 14px",
-    fontFamily: FONT,
-    fontWeight: 700,
-    fontSize: "12px",
-    textDecoration: "none",
-    cursor: "pointer",
-  };
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-      {p.ghUrl && (
-        <a
-          href={p.ghUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={onLinkClick}
-          tabIndex={tabIndex}
-          className="btn-quiet"
-          style={{ ...btnStyle, background: "rgba(255,255,255,0.08)", color: C.cream, border: `1px solid ${C.border}` }}
-        >
-          <Github size={13} /> Code
-        </a>
-      )}
+    <>
       {p.demoUrl && (
         <a
           href={p.demoUrl}
@@ -408,10 +407,21 @@ function LinkButtons({
           rel="noopener noreferrer"
           onClick={onLinkClick}
           tabIndex={tabIndex}
-          className="btn-quiet btn-gold"
-          style={btnStyle}
+          className="btn-quiet btn-gold case-link"
         >
-          <ArrowUpRight size={13} strokeWidth={2.4} /> Live demo
+          <ArrowUpRight size={13} strokeWidth={2.4} aria-hidden /> Live demo
+        </a>
+      )}
+      {p.ghUrl && (
+        <a
+          href={p.ghUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onLinkClick}
+          tabIndex={tabIndex}
+          className="btn-quiet case-link"
+        >
+          <Github size={13} aria-hidden /> Code
         </a>
       )}
       {p.devpostUrl && (
@@ -421,13 +431,12 @@ function LinkButtons({
           rel="noopener noreferrer"
           onClick={onLinkClick}
           tabIndex={tabIndex}
-          className="btn-quiet"
-          style={{ ...btnStyle, background: "rgba(255,255,255,0.08)", color: C.cream, border: `1px solid ${C.border}` }}
+          className="btn-quiet case-link"
         >
-          <ArrowUpRight size={13} strokeWidth={2.4} /> Devpost writeup
+          <ArrowUpRight size={13} strokeWidth={2.4} aria-hidden /> Devpost writeup
         </a>
       )}
-    </div>
+    </>
   );
 }
 
@@ -435,10 +444,77 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
   const backId = useId();
   const status = STATUS_STYLE[p.status];
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const hasLinks = Boolean(p.demoUrl || p.ghUrl || p.devpostUrl);
+  const isLede = p.back.sections.length === 1;
+
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const sheenRef = useRef<HTMLSpanElement>(null);
+  const frontBtnRef = useRef<HTMLButtonElement>(null);
+  const backBtnRef = useRef<HTMLButtonElement>(null);
+  const box = useRef<DOMRect | null>(null);
+  const frame = useRef(0);
+  const aim = useRef({ x: 0.5, y: 0.3 });
+
+  // Every change of side (this card's button, another card taking over,
+  // or a filter change) bumps the turn count. Its parity picks one of two
+  // identical keyframes, so each turn restarts the light-catch animation;
+  // zero means "never turned", so nothing animates on first paint.
+  const [turns, setTurns] = useState(0);
+  const [lastFlipped, setLastFlipped] = useState(flipped);
+  if (lastFlipped !== flipped) {
+    setLastFlipped(flipped);
+    setTurns((n) => n + 1);
+  }
+
+  // Keep keyboard focus on the visible side: the button you pressed is
+  // about to face away (and go aria-hidden), so hand focus to its twin.
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const scene = sceneRef.current;
+    if (!scene || !scene.contains(document.activeElement)) return;
+    (flipped ? backBtnRef : frontBtnRef).current?.focus({ preventScroll: true });
+  }, [flipped]);
+
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+  // Sunlight sheen: the box is measured once on enter, so pointermove does
+  // no layout reads; writes are batched to one per frame, on the sheen only.
+  const aimAt = (x: number, y: number) => {
+    aim.current = { x, y };
+    if (frame.current) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      const el = sheenRef.current;
+      if (!el) return;
+      el.style.setProperty("--px", aim.current.x.toFixed(3));
+      el.style.setProperty("--py", aim.current.y.toFixed(3));
+    });
+  };
 
   return (
-    <div className="flip-scene">
-      <div className={"flip-card" + (flipped ? " is-flipped" : "")}>
+    <div
+      ref={sceneRef}
+      className="flip-scene"
+      onPointerEnter={(e) => {
+        if (e.pointerType === "mouse") box.current = e.currentTarget.getBoundingClientRect();
+      }}
+      onPointerMove={(e) => {
+        const r = box.current;
+        if (r) aimAt((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+      }}
+      onPointerLeave={() => {
+        box.current = null;
+      }}
+    >
+      <div
+        className={
+          "flip-card" + (flipped ? " is-flipped" : "") + (turns === 0 ? "" : turns % 2 ? " turn-a" : " turn-b")
+        }
+      >
         {/* ── front face ── */}
         <div
           className="flip-face flip-face-front"
@@ -460,6 +536,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
               background: p.photo ? `${PHOTO_SCRIM}, url(${p.photo}) center/cover no-repeat` : ART_FIELD,
               boxShadow: "inset 0 0 0 1px rgba(255,249,232,0.06)",
               overflow: "hidden",
+              isolation: "isolate",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -470,6 +547,7 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
             ) : (
               <p.icon size={34} color={C.cream} strokeWidth={1.4} aria-hidden />
             )}
+            <span ref={sheenRef} className="card-sheen" aria-hidden />
             <span
               style={{
                 position: "absolute",
@@ -487,7 +565,14 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                 borderRadius: "999px",
               }}
             >
-              {p.status === "Award Winner" && <Trophy size={11} color={status.color} strokeWidth={2} />}
+              {p.status === "Award Winner" && <Trophy size={11} color={status.color} strokeWidth={2} aria-hidden />}
+              {p.status === "Live" && (
+                <span
+                  className="live-dot"
+                  aria-hidden
+                  style={{ width: 6, height: 6, borderRadius: "50%", background: "#FFD447" }}
+                />
+              )}
               {p.status}
             </span>
             {p.ghUrl && (
@@ -513,21 +598,40 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
                   textDecoration: "none",
                 }}
               >
-                <Github size={15} color={C.cream} />
+                <Github size={15} color={C.cream} aria-hidden />
               </a>
             )}
           </div>
 
           {/* title + description */}
-          <div
+          <h3
             className="serif"
-            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.dark, marginTop: "14px", lineHeight: 1.25 }}
+            style={{
+              fontFamily: SERIF,
+              fontWeight: 600,
+              fontSize: "19px",
+              color: C.dark,
+              margin: "14px 0 0",
+              lineHeight: 1.25,
+              letterSpacing: "-0.01em",
+            }}
           >
             {p.title}
-          </div>
-          <p className="card-desc" style={{ fontSize: "14px", fontWeight: 500, lineHeight: 1.6, color: C.moss, marginTop: "6px" }}>
+          </h3>
+          <p
+            className="card-desc"
+            style={{ fontSize: "14px", fontWeight: 500, lineHeight: 1.6, color: C.moss, marginTop: "6px", textWrap: "pretty" }}
+          >
             {p.desc}
           </p>
+
+          {/* one real, sourced number — only when the project has one */}
+          {p.metric && (
+            <div className="card-metric">
+              <span className="card-metric__value">{p.metric.value}</span>
+              <span className="card-metric__label">{p.metric.label}</span>
+            </div>
+          )}
 
           {/* hashtags */}
           <div className="card-tags" style={{ display: "flex", flexWrap: "wrap", gap: "6px 10px", marginTop: "10px" }}>
@@ -542,13 +646,14 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
 
           {/* flip control */}
           <button
+            ref={frontBtnRef}
             type="button"
             onClick={onToggle}
             tabIndex={flipped ? -1 : 0}
             aria-expanded={flipped}
             aria-controls={backId}
             aria-label={`View details for ${p.title}`}
-            className="tab"
+            className="tab card-flip-btn"
             style={{
               marginTop: "auto",
               width: "100%",
@@ -568,73 +673,64 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
               flexShrink: 0,
             }}
           >
-            View details <ArrowUpRight size={14} strokeWidth={2.4} />
+            View details <ArrowUpRight size={14} strokeWidth={2.4} aria-hidden />
           </button>
         </div>
 
-        {/* ── back face: case-study detail ── */}
+        {/* ── back face: a small case-study sheet ── */}
         <div
           id={backId}
-          className="flip-face flip-face-back"
+          className="flip-face flip-face-back case-back"
           aria-hidden={!flipped}
           style={{
             background: DARK_GRAD,
             borderRadius: "22px",
             border: "1px solid rgba(234,170,34,0.18)",
-            padding: "16px",
           }}
         >
-          <div
-            className="serif"
-            style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "19px", color: C.cream, lineHeight: 1.25 }}
-          >
-            {p.title}
-          </div>
-
-          <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-            {p.back.sections.map((s) => (
-              <div key={s.label}>
-                <div style={{ ...EYEBROW, color: C.sun }}>{s.label}</div>
-                <p style={{ fontSize: "13px", fontWeight: 500, lineHeight: 1.5, color: "rgba(255,249,232,0.82)", marginTop: "5px" }}>
-                  {s.text}
-                </p>
-              </div>
-            ))}
-            <div>
-              <div style={{ ...EYEBROW, color: C.sun }}>Technology</div>
-              <p style={{ fontSize: "13px", fontWeight: 600, lineHeight: 1.5, color: C.cream, marginTop: "5px" }}>{p.back.tech}</p>
+          <div className="case-head">
+            <div className="case-titles">
+              <div className="case-title">{p.title}</div>
+              {p.when && <div className="case-when">{p.when}</div>}
             </div>
-          </div>
-
-          <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <LinkButtons p={p} onLinkClick={stop} tabIndex={flipped ? 0 : -1} />
             <button
+              ref={backBtnRef}
               type="button"
               onClick={onToggle}
               tabIndex={flipped ? 0 : -1}
               aria-expanded={flipped}
               aria-controls={backId}
               aria-label={`Flip back to ${p.title} summary`}
-              className="btn-quiet"
-              style={{
-                alignSelf: "flex-start",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                cursor: "pointer",
-                borderRadius: "999px",
-                padding: "8px 14px",
-                fontFamily: FONT,
-                fontWeight: 700,
-                fontSize: "12px",
-                border: "1px solid rgba(255,255,255,0.16)",
-                background: "rgba(255,255,255,0.06)",
-                color: C.cream,
-              }}
+              className="btn-quiet case-flip"
             >
-              <RotateCcw size={13} /> Flip back
+              <RotateCcw size={13} aria-hidden /> Flip back
             </button>
           </div>
+
+          <div className="case-body">
+            {p.back.sections.map((s, i) => (
+              <section
+                key={s.label}
+                className={
+                  "case-section" + (s.label === "Outcome" ? " is-outcome" : "") + (isLede ? " is-lede" : "")
+                }
+                style={stagger(i)}
+              >
+                <div className="case-label">{s.label}</div>
+                <p className="case-text">{s.text}</p>
+              </section>
+            ))}
+            <section className="case-section" style={stagger(p.back.sections.length)}>
+              <div className="case-label">Technology</div>
+              <p className="case-tech">{p.back.tech}</p>
+            </section>
+          </div>
+
+          {hasLinks && (
+            <div className="case-foot" style={stagger(p.back.sections.length + 1)}>
+              <LinkButtons p={p} onLinkClick={stop} tabIndex={flipped ? 0 : -1} />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -646,62 +742,155 @@ function ProjectCard({ p, flipped, onToggle }: { p: Project; flipped: boolean; o
 export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
   const [filter, setFilter] = useState<Filter>("All Projects");
   const [flippedTitle, setFlippedTitle] = useState<string | null>(null);
-  const shown = PROJECTS.filter((p) => filter === "All Projects" || p.cats.includes(filter));
+  const shown = useMemo(
+    () => PROJECTS.filter((p) => filter === "All Projects" || p.cats.includes(filter)),
+    [filter]
+  );
+
+  /* filter rail: one gold pill that glides to the active tab */
+  const railRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const tabRefs = useRef<Partial<Record<Filter, HTMLButtonElement | null>>>({});
+  const [railReady, setRailReady] = useState(false);
+
+  // Writes CSS variables only, so moving the pill never re-renders React.
+  const placePill = useCallback(() => {
+    const pill = pillRef.current;
+    const btn = tabRefs.current[filter];
+    if (!pill || !btn) return;
+    pill.style.setProperty("--pill-x", `${btn.offsetLeft}px`);
+    pill.style.setProperty("--pill-y", `${btn.offsetTop}px`);
+    pill.style.setProperty("--pill-w", `${btn.offsetWidth}px`);
+    pill.style.setProperty("--pill-h", `${btn.offsetHeight}px`);
+  }, [filter]);
+
+  useLayoutEffect(() => {
+    placePill();
+  }, [placePill]);
+
+  // Place first, then switch transitions on a frame later: no slide-in from 0,0.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setRailReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Re-measure when the rail wraps or the web font swaps in and changes tab widths.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => placePill());
+    ro.observe(rail);
+    Object.values(tabRefs.current).forEach((b) => b && ro.observe(b));
+    return () => ro.disconnect();
+  }, [placePill]);
+
+  // Arrow keys / Home / End move focus along the rail (Enter or Space picks).
+  // Handling them here also stops the panel scroller from sliding sideways.
+  const onTabKey = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+    const n = TABS.length;
+    let j: number;
+    if (e.key === "ArrowRight") j = (i + 1) % n;
+    else if (e.key === "ArrowLeft") j = (i - 1 + n) % n;
+    else if (e.key === "Home") j = 0;
+    else if (e.key === "End") j = n - 1;
+    else return;
+    e.preventDefault();
+    tabRefs.current[TABS[j]]?.focus();
+  };
+
+  /* grid: cards that survive a filter change glide to their new cell (FLIP) */
+  const gridRef = useRef<HTMLDivElement>(null);
+  const flipFrom = useRef<Map<string, DOMRect> | null>(null);
 
   const selectFilter = (f: Filter) => {
+    if (f === filter) return;
+    const grid = gridRef.current;
+    if (grid && !prefersReducedMotion()) {
+      const from = new Map<string, DOMRect>();
+      Array.from(grid.children).forEach((el, i) => {
+        if (shown[i]) from.set(shown[i].title, el.getBoundingClientRect());
+      });
+      flipFrom.current = from;
+    }
     setFilter(f);
     setFlippedTitle(null); // don't leave an orphaned flipped card behind a changed filter
   };
+
+  useLayoutEffect(() => {
+    const from = flipFrom.current;
+    flipFrom.current = null;
+    const grid = gridRef.current;
+    if (!from || !grid) return;
+    Array.from(grid.children).forEach((el, i) => {
+      const prev = shown[i] && from.get(shown[i].title);
+      if (!prev) return;
+      const now = el.getBoundingClientRect();
+      const dx = prev.left - now.left;
+      const dy = prev.top - now.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      (el as HTMLElement).animate(
+        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
+        { duration: 480, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } // --dur-slow, --ease-out
+      );
+    });
+  }, [shown]);
 
   const resumeCard: React.CSSProperties = {
     background: C.panel,
     borderRadius: "20px",
     border: `1px solid ${C.border}`,
-    padding: "20px 22px",
   };
   const resumeCardDark: React.CSSProperties = {
     background: DARK_GRAD,
     borderRadius: "20px",
     border: "1px solid rgba(234,170,34,0.16)",
-    padding: "20px 22px",
   };
   const cardLabel = (dark?: boolean): React.CSSProperties => ({ ...EYEBROW, color: dark ? C.sun : C.muted });
 
   return (
     <div style={{ minHeight: "100vh", fontFamily: FONT, ...DOT_GRID }}>
       <div style={{ padding: "92px clamp(16px, 3vw, 36px) 56px", maxWidth: "1240px", margin: "0 auto" }}>
-        {/* ── intro ── */}
-        <div style={EYEBROW}>What I&apos;ve built</div>
-        <h1
-          className="serif"
-          style={{
-            fontFamily: SERIF,
-            fontWeight: 600,
-            fontSize: "clamp(36px, 4vw, 56px)",
-            lineHeight: 1.05,
-            color: C.dark,
-            margin: "14px 0 0",
-            letterSpacing: "-0.018em",
-          }}
-        >
-          My Work.
-        </h1>
-        <p style={{ maxWidth: "62ch", marginTop: "16px", fontSize: "15px", fontWeight: 500, lineHeight: 1.65, color: C.moss }}>
-          A collection of things I&apos;ve built — products and experiments across edge AI, health technology,
-          automation, and applied machine learning. Filter by what you&apos;re curious about; each card links out
-          to its code, write-up, or résumé entry.
-        </p>
+        {/* ── intro: editorial masthead ── */}
+        <header className="works-masthead">
+          <Reveal>
+            <div style={EYEBROW}>What I&apos;ve built</div>
+          </Reveal>
+          <Reveal delay={60}>
+            <h1 className="works-title">
+              My <em>Work.</em>
+            </h1>
+          </Reveal>
+          <Reveal delay={120}>
+            <p className="works-lead">
+              A collection of things I&apos;ve built — products and experiments across edge AI, health technology,
+              automation, and applied machine learning. Filter by what you&apos;re curious about; each card links out
+              to its code, write-up, or résumé entry.
+            </p>
+          </Reveal>
+        </header>
 
-        {/* ── filter tabs ── */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "26px" }}>
-          {TABS.map((tab) => {
+        {/* ── filter rail ── */}
+        <div
+          ref={railRef}
+          role="group"
+          aria-label="Filter projects by category"
+          className={"filter-rail" + (railReady ? " is-ready" : "")}
+          style={{ marginTop: "30px" }}
+        >
+          <span ref={pillRef} aria-hidden className="filter-rail__pill" />
+          {TABS.map((tab, i) => {
             const on = filter === tab;
             return (
               <button
                 key={tab}
+                ref={(el) => {
+                  tabRefs.current[tab] = el;
+                }}
+                type="button"
                 onClick={() => selectFilter(tab)}
+                onKeyDown={(e) => onTabKey(e, i)}
                 aria-pressed={on}
-                className={on ? "tab btn-gold" : "tab"}
+                className="tab filter-rail__tab"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -713,28 +902,39 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontWeight: 700,
                   fontSize: "13px",
                   letterSpacing: "0.01em",
-                  border: on ? "1px solid transparent" : `1px solid ${C.border}`,
-                  background: C.panel,
-                  color: C.moss,
                 }}
               >
                 {tab}
-                <span style={{ fontWeight: 600, opacity: 0.6, fontSize: "12px", fontVariantNumeric: "tabular-nums" }}>
-                  {countFor(tab)}
-                </span>
+                <span className="filter-rail__count">{countFor(tab)}</span>
               </button>
             );
           })}
         </div>
-        <div style={{ height: "1px", background: C.border, margin: "24px 0 28px" }} />
+        <p className="sr-only" aria-live="polite">
+          Showing {shown.length} of {PROJECTS.length} projects
+        </p>
+        <Reveal style={{ margin: "24px 0 28px" }}>
+          <div className="works-rule" />
+        </Reveal>
 
         {/* the grid's heading, for screen readers — the H1 above already says it visually */}
         <h2 className="sr-only">Selected work</h2>
 
         {/* ── filtered project grid ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "20px" }}>
+        <div
+          ref={gridRef}
+          className="works-grid"
+          onKeyDown={(e) => {
+            // Escape closes the open case sheet; the card hands focus back to its front button
+            if (e.key === "Escape" && flippedTitle) {
+              e.stopPropagation();
+              setFlippedTitle(null);
+            }
+          }}
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: "20px" }}
+        >
           {shown.map((p, i) => (
-            <Reveal key={`${filter}-${p.title}`} delay={Math.min(i, 5) * 40} style={{ display: "flex" }}>
+            <Reveal key={p.title} delay={Math.min(i, 5) * 40} style={{ display: "flex" }}>
               <ProjectCard
                 p={p}
                 flipped={flippedTitle === p.title}
@@ -744,91 +944,113 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
           ))}
         </div>
 
-        {/* ── compact résumé strip: experience / education / toolbox ── */}
-        <Reveal style={{ marginTop: "48px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-            <div className="pbox" style={resumeCardDark}>
+        {/* ── résumé strip: experience + education beside a grouped toolbox ── */}
+        <h2 className="sr-only">Résumé</h2>
+        <div className="rs-grid">
+          <Reveal style={{ display: "flex", gridArea: "exp" }}>
+            <div className="pbox rs-card" style={resumeCardDark}>
               <div style={cardLabel(true)}>Experience</div>
-              <div style={{ marginTop: "12px" }}>
-                <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream }}>
-                  NVIDIA AI &amp; Machine Learning Instructor
+              <div style={{ marginTop: "14px" }}>
+                <div className="rs-entry">
+                  <div className="rs-title">NVIDIA AI &amp; Machine Learning Instructor</div>
+                  <div className="rs-meta">iD Tech · Stanford, CA · Jun 2026 – Present</div>
                 </div>
-                <div style={{ fontSize: "12px", fontWeight: 500, color: "rgba(255,249,232,0.6)", marginTop: "4px" }}>
-                  iD Tech · Stanford, CA · Jun 2026 – Present
-                </div>
-                <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.cream, marginTop: "14px" }}>
-                  Software Engineering Intern
-                </div>
-                <div style={{ fontSize: "12px", fontWeight: 500, color: "rgba(255,249,232,0.6)", marginTop: "4px" }}>
-                  Sports Media Inc. · Jun 2025 – Aug 2025
+                <div className="rs-entry">
+                  <div className="rs-title">Software Engineering Intern</div>
+                  <div className="rs-meta">Sports Media Inc. · Jun 2025 – Aug 2025</div>
                 </div>
               </div>
+              <a className="rs-pdf" href={RESUME_PDF} target="_blank" rel="noopener noreferrer">
+                Full résumé (PDF) <ArrowUpRight size={13} strokeWidth={2.4} aria-hidden />
+              </a>
             </div>
+          </Reveal>
 
-            <div className="pbox" style={resumeCard}>
+          <Reveal delay={70} style={{ display: "flex", gridArea: "edu" }}>
+            <div className="pbox rs-card" style={resumeCard}>
               <div style={cardLabel()}>Education &amp; Leadership</div>
-              <div className="serif" style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "15px", color: C.dark, marginTop: "12px" }}>
-                Augustana College
+              <div style={{ marginTop: "14px" }}>
+                <div className="rs-entry">
+                  <div className="rs-title">Augustana College</div>
+                  <div className="rs-meta" style={{ color: C.moss }}>
+                    B.A. Computer Science &amp; Data Science · Minor in Math · Expected 05/2027
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "4px", lineHeight: 1.6 }}>
-                B.A. Computer Science &amp; Data Science · Minor in Math · Expected 05/2027
-              </div>
-              <div style={{ fontSize: "12px", fontWeight: 500, color: C.moss, marginTop: "10px", lineHeight: 1.6 }}>
+              <div className="rs-divider" />
+              <p className="rs-meta" style={{ color: C.moss, margin: 0, lineHeight: 1.6 }}>
                 Community Advisor · Google Dev Group Co-Lead — mentored 200+ students, ran workshops &amp; hackathons.
-              </div>
+              </p>
             </div>
+          </Reveal>
 
-            <div className="pbox" style={resumeCard}>
+          <Reveal delay={140} style={{ display: "flex", gridArea: "tools" }}>
+            <div className="pbox rs-card" style={resumeCard}>
               <div style={cardLabel()}>Toolbox</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
-                {SKILLS.map((skill) => (
-                  <span
-                    key={skill}
-                    className="chip"
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      color: C.bark,
-                      border: `1px solid ${C.border}`,
-                      background: "rgba(234,170,34,0.12)",
-                      borderRadius: "999px",
-                      padding: "4px 11px",
-                    }}
-                  >
-                    {skill}
-                  </span>
+              <div className="rs-groups">
+                {TOOLBOX.map((g) => (
+                  <div key={g.label}>
+                    <div className="rs-group-label">{g.label}</div>
+                    <ul className="rs-chips" aria-label={g.label}>
+                      {g.items.map((skill) => (
+                        <li key={skill} className="rs-chip">
+                          {skill}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        </div>
 
-        {/* ── footer CTA ── */}
+        {/* ── closing CTA: lit from below as it arrives ── */}
         <Reveal style={{ marginTop: "20px" }}>
-          <div
+          <section
+            aria-labelledby="works-cta-title"
+            className="closing-cta"
             style={{
               background: DARK_GRAD,
               borderRadius: "20px",
               border: "1px solid rgba(234,170,34,0.16)",
-              padding: "24px 28px",
+              padding: "26px 28px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: "16px",
+              gap: "18px",
             }}
           >
-            <div
+            <h2
+              id="works-cta-title"
               className="serif"
-              style={{ fontFamily: SERIF, fontWeight: 600, fontSize: "clamp(20px, 2vw, 26px)", color: C.cream, lineHeight: 1.3, letterSpacing: "-0.01em" }}
+              style={{
+                margin: 0,
+                fontFamily: SERIF,
+                fontWeight: 600,
+                fontSize: "clamp(20px, 2vw, 26px)",
+                color: C.cream,
+                lineHeight: 1.3,
+                letterSpacing: "-0.01em",
+                textWrap: "balance",
+              }}
             >
-              Let&apos;s build something <span style={{ color: C.sun }}>useful</span> ✦
-            </div>
-            <div style={{ display: "flex", gap: "12px" }}>
+              Let&apos;s build something{" "}
+              <span className="cta-accent" style={{ color: C.sun }}>
+                useful
+              </span>{" "}
+              <span aria-hidden="true">✦</span>
+            </h2>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
+                type="button"
                 onClick={() => goTo("welcome")}
-                className="btn-quiet"
+                className="btn-quiet cta-back"
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "7px",
                   background: "rgba(255,255,255,0.08)",
                   border: "1px solid rgba(255,255,255,0.16)",
                   borderRadius: "999px",
@@ -840,12 +1062,37 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   color: C.cream,
                 }}
               >
-                ← Back to start
+                <ArrowLeft size={14} strokeWidth={2.4} aria-hidden /> Back to start
               </button>
               <a
-                href="mailto:summerpandey23@augustana.edu"
+                href={RESUME_PDF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-quiet cta-back"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "7px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  borderRadius: "999px",
+                  padding: "11px 18px",
+                  textDecoration: "none",
+                  fontFamily: FONT,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  color: C.cream,
+                }}
+              >
+                <FileText size={14} strokeWidth={2.2} aria-hidden /> Résumé (PDF)
+              </a>
+              <a
+                href={MAILTO}
                 className="btn-quiet btn-gold"
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "7px",
                   borderRadius: "999px",
                   padding: "11px 18px",
                   textDecoration: "none",
@@ -855,10 +1102,10 @@ export function WorkPage({ goTo }: { goTo: (p: Panel) => void }) {
                   color: "#080909",
                 }}
               >
-                Say hello ✉
+                Say hello <Mail size={14} strokeWidth={2.4} aria-hidden />
               </a>
             </div>
-          </div>
+          </section>
         </Reveal>
       </div>
     </div>

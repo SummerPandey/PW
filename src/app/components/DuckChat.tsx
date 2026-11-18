@@ -1,20 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { C, FONT } from "./theme";
-import { DuckPeek } from "./fx";
+import { C, FONT, MAILTO, RESUME_PDF } from "./theme";
+import { DuckPeek, usePrefersReducedMotion } from "./fx";
 
 /* ────────────────────────────────────────────────────────────────────
    DuckChat — the panel that opens when you click the duck. Talks to
    /api/duck-chat, which answers as Summer's coding duck.
+
+   It has a real lifecycle: it grows out of its bottom-right corner (where
+   the duck lives) on open, sinks away on close instead of popping out,
+   and hands focus back to whatever opened it.
    ──────────────────────────────────────────────────────────────────── */
 
 type Message = { role: "user" | "duck"; text: string };
 
 const GREETING: Message = {
   role: "duck",
-  text: "quack — me Summer's duck. Ask about his projects, skills, work.",
+  text: "quack — me Summer's duck. Ask about Summer's projects, skills, work.",
 };
+
+/** Starter questions shown under the greeting until the first message. */
+const STARTERS = ["What has Summer built?", "What's his tech stack?", "Is Summer open to roles?", "How do I reach Summer?"];
+
+/** Matches the .duck-chat close animation (--dur-base) in globals.css. */
+const EXIT_MS = 200;
 
 export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<Message[]>([GREETING]);
@@ -23,10 +33,46 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const reduced = usePrefersReducedMotion();
 
-  // Focus the input the moment the panel opens.
+  // Stay mounted through the exit animation.
+  const [mounted, setMounted] = useState(open);
+  const [closing, setClosing] = useState(false);
+  if (open && (!mounted || closing)) {
+    // opening (or re-opening mid-exit) takes effect in this same render
+    setMounted(true);
+    setClosing(false);
+  }
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open || !mounted) return;
+    if (reduced) {
+      setMounted(false);
+      return;
+    }
+    setClosing(true);
+    const t = window.setTimeout(() => {
+      setMounted(false);
+      setClosing(false);
+    }, EXIT_MS);
+    return () => window.clearTimeout(t);
+  }, [open, mounted, reduced]);
+
+  // On open: remember who opened us and focus the input. On close: hand
+  // focus back (unless the visitor already moved it somewhere else).
+  useEffect(() => {
+    if (open) {
+      const active = document.activeElement;
+      openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+      inputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    const opener = openerRef.current;
+    openerRef.current = null;
+    const active = document.activeElement;
+    const focusIsOurs = !active || active === document.body || rootRef.current?.contains(active);
+    if (opener?.isConnected && focusIsOurs) opener.focus({ preventScroll: true });
   }, [open]);
 
   // Escape closes the panel.
@@ -41,13 +87,13 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
 
   // Auto-scroll to the newest message.
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: reduced ? "auto" : "smooth" });
+  }, [messages, loading, reduced]);
 
-  async function send() {
-    const text = input.trim();
+  async function send(preset?: string) {
+    const text = (preset ?? input).trim();
     if (!text || loading) return;
-    setInput("");
+    if (preset === undefined) setInput("");
     setError(null);
     const next = [...messages, { role: "user" as const, text }];
     setMessages(next);
@@ -72,13 +118,16 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
     }
   }
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
     <div
+      ref={rootRef}
+      className="duck-chat"
+      data-state={closing ? "closed" : "open"}
       style={{
         position: "fixed",
-        bottom: "20px",
+        bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
         right: "20px",
         zIndex: 90,
         width: "min(340px, calc(100vw - 32px))",
@@ -95,7 +144,7 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
           filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.4))",
         }}
       >
-        <DuckPeek size={72} />
+        <DuckPeek size={72} className="duck-chat-peek" />
       </div>
 
       {/* the panel itself — clipped to its rounded corners, so it needs
@@ -103,8 +152,8 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
       <div
         role="dialog"
         aria-label="Chat with the coding duck"
+        className="duck-chat-panel"
         style={{
-          maxHeight: "min(480px, calc(100vh - 100px))",
           display: "flex",
           flexDirection: "column",
           background: "#121313",
@@ -113,7 +162,6 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
           boxShadow: "0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,212,71,0.06)",
           overflow: "hidden",
           fontFamily: FONT,
-          animation: "toast-in 0.25s ease",
         }}
       >
         {/* header */}
@@ -137,7 +185,7 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
           <button
             onClick={onClose}
             aria-label="Close chat"
-            className="icon-btn"
+            className="icon-btn hit"
             style={{
               width: "26px",
               height: "26px",
@@ -160,6 +208,9 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
         {/* messages */}
         <div
           ref={listRef}
+          role="log"
+          aria-live="polite"
+          aria-label="Conversation"
           style={{
             flex: 1,
             overflowY: "auto",
@@ -173,6 +224,7 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
           {messages.map((m, i) => (
             <div
               key={i}
+              className="chat-msg"
               style={{
                 alignSelf: m.role === "user" ? "flex-end" : "flex-start",
                 maxWidth: "84%",
@@ -191,8 +243,18 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
               {m.text}
             </div>
           ))}
+          {messages.length === 1 && !loading && (
+            <div className="duck-starters" role="group" aria-label="Suggested questions">
+              {STARTERS.map((q) => (
+                <button key={q} type="button" className="duck-chip" onClick={() => send(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
           {loading && (
             <div
+              className="chat-msg"
               style={{
                 alignSelf: "flex-start",
                 padding: "9px 12px",
@@ -208,8 +270,18 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
             </div>
           )}
           {error && (
-            <div style={{ fontSize: "12px", color: C.sun, fontWeight: 600, alignSelf: "flex-start" }}>{error}</div>
+            <div className="chat-msg" style={{ fontSize: "12px", color: C.sun, fontWeight: 600, alignSelf: "flex-start" }}>
+              {error}
+            </div>
           )}
+        </div>
+
+        {/* always-visible hiring shortcuts — plain links, nothing sent */}
+        <div className="duck-links">
+          <a href={RESUME_PDF} target="_blank" rel="noopener noreferrer">
+            Résumé (PDF) ↗
+          </a>
+          <a href={MAILTO}>Email Summer</a>
         </div>
 
         {/* input */}
@@ -223,29 +295,32 @@ export function DuckChat({ open, onClose }: { open: boolean; onClose: () => void
         >
           <input
             ref={inputRef}
+            className="duck-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") send();
+              // an IME confirming a word also sends Enter; don't send then
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) send();
             }}
             placeholder="Ask about a project, skill..."
+            aria-label="Message the duck"
+            enterKeyHint="send"
+            autoComplete="off"
             maxLength={400}
             style={{
               flex: 1,
+              minWidth: 0,
               background: "#080909",
-              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: "999px",
               padding: "9px 14px",
-              fontSize: "13px",
               color: C.dark,
               fontFamily: FONT,
-              outline: "none",
             }}
           />
           <button
-            onClick={send}
+            onClick={() => send()}
             disabled={loading || !input.trim()}
-            className="btn-bounce"
+            className="btn-bounce chat-send"
             style={{
               width: "38px",
               height: "38px",

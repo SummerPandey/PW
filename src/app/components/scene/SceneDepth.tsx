@@ -164,18 +164,27 @@ function fillTriangle(ctx: CanvasRenderingContext2D, p: [Pt, Pt, Pt], W: number,
   }
 }
 
-export function SceneDepth({ reducedMotion }: { reducedMotion: boolean }): JSX.Element {
+export function SceneDepth({
+  reducedMotion,
+  paused = false,
+}: {
+  reducedMotion: boolean;
+  /** True while the strip is faded out: the loop sleeps on a still-current frame. */
+  paused?: boolean;
+}): JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const farRef = useRef<HTMLCanvasElement>(null);
   const nearRef = useRef<HTMLCanvasElement>(null);
   // Props are read through refs, so the loop never restarts on a prop change.
   const reducedRef = useRef(reducedMotion);
+  const pausedRef = useRef(paused);
   const syncRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     reducedRef.current = reducedMotion;
+    pausedRef.current = paused;
     syncRef.current();
-  }, [reducedMotion]);
+  }, [reducedMotion, paused]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -451,6 +460,12 @@ export function SceneDepth({ reducedMotion }: { reducedMotion: boolean }): JSX.E
       if (reducedRef.current) {
         stop();
         render(performance.now(), true);
+        return;
+      }
+      if (pausedRef.current) {
+        // parked while hidden, but with a current frame ready for the fade-in
+        stop();
+        render(performance.now(), false);
         return;
       }
       if (onScreen && document.visibilityState === "visible") start();

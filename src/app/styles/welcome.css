@@ -1,0 +1,311 @@
+/* ────────────────────────────────────────────────────────────────────
+   welcome.css — the Welcome panel and the site shell.
+
+   Everything here animates transform or opacity only, on the shared
+   motion tokens from globals.css. Chrome (headline, arrows) eases
+   out quietly; only the delight layer (clouds, motes) gets the spring.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* ── Headline entrance ───────────────────────────────────────────────
+   Keyed on the boot's own DOM signal, not React state:
+   - while the boot screen is up (JS on, no data-boot yet) it is hidden;
+   - when the boot starts its cross-fade (data-boot="done") the tiers
+     rise with an 80ms stagger, 180ms in, so the rise lands in the
+     visible second half of the fade;
+   - on a return visit (data-boot="skip", set before first paint) it is
+     simply there at first paint, with no flash and no jump.
+   Opacity and a 2D translate only: no scale (scaled text shimmers), no
+   blur, no spring. The scroll-driven fade lives on the parent, so the
+   two never fight over one transform. ──────────────────────────────── */
+html[data-js]:not([data-boot]) .welcome .wl {
+  opacity: 0;
+}
+html[data-boot="done"] .welcome .wl {
+  animation: wl-rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(180ms + var(--wl-delay, 0ms));
+}
+.wl-a { --wl-delay: 80ms; }
+.wl-b { --wl-delay: 160ms; }
+.wl-c { --wl-delay: 240ms; }
+.wl-cue { --wl-delay: 360ms; }
+.wl-line { display: block; }
+@keyframes wl-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Stage ───────────────────────────────────────────────────────── */
+.welcome-stage {
+  /* the water strip's height, shared with the light-fall clip so the two
+     can never drift apart */
+  --water-h: clamp(160px, 26vw, 260px);
+}
+
+/* ── Sun ─────────────────────────────────────────────────────────────
+   A disc plus a pre-blurred halo, both rasterized once. Scroll only
+   writes their transform and opacity, so the climb never relayouts or
+   repaints (the old version moved `top` and grew a 226px box-shadow
+   blur every frame). ─────────────────────────────────────────────── */
+.welcome-sun,
+.welcome-halo {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.welcome-halo {
+  top: -162px; /* centred on the disc: 138 - 300 */
+  width: 600px;
+  height: 600px;
+  margin-left: -300px;
+  z-index: 2;
+  background: radial-gradient(
+    closest-side,
+    rgba(234, 170, 34, 0.6) 18%,
+    rgba(234, 170, 34, 0.34) 30%,
+    rgba(234, 170, 34, 0.15) 50%,
+    rgba(234, 170, 34, 0.05) 72%,
+    rgba(234, 170, 34, 0) 100%
+  );
+}
+/* authored at its full-climb size (1.35 x 120px) and only ever scaled
+   down, so the rasterized edge never gets stretched and stays crisp;
+   centre stays at 138px */
+.welcome-sun {
+  top: 57px;
+  width: 162px;
+  height: 162px;
+  margin-left: -81px;
+  z-index: 2;
+  background: radial-gradient(circle, #ffd447, #eaaa22);
+  box-shadow: 0 0 38px rgba(234, 170, 34, 0.35);
+}
+
+/* ── Scroll cue ──────────────────────────────────────────────────── */
+.scroll-cue-arrow {
+  display: inline-block;
+  animation: cue-drift 2.4s var(--ease-inout) infinite;
+}
+@keyframes cue-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* ── Clouds ──────────────────────────────────────────────────────────
+   Scroll drives .cloud-slot's transform with no transition (so every
+   cloud tracks the sun 1:1); hover, press and focus live on .cloud-nav,
+   a child, so they never fight over one transform. ─────────────────── */
+.cloud-nav {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  pointer-events: auto;
+  border-radius: 46% 46% 40% 40% / 58% 58% 42% 42%;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+.cloud-rim {
+  transition: fill var(--dur-base) var(--ease-out);
+}
+.cloud-nav:active {
+  transform: translateY(1px) scale(0.97);
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+.cloud-nav:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 6px;
+  border-radius: 46% 46% 40% 40% / 58% 58% 42% 42%;
+}
+
+/* ── Light motes ─────────────────────────────────────────────────── */
+/* On the landing view the light falls the full height. Once the water
+   is in, the fall stops at its horizon and fades out, so light sinks
+   into the scene instead of crossing (and stealing clicks from) the
+   duck. `bottom`, not just the mask: masks don't affect hit-testing. */
+.light-fall {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.welcome-stage.water-in .light-fall {
+  bottom: var(--water-h, 0px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent);
+}
+/* the dot stays 6–14px, but its catch zone is ~26px */
+.mote-dot {
+  position: relative;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+.mote-dot::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+}
+.mote-dot[data-tier="0"] {
+  filter: blur(0.6px); /* far motes sit a touch out of focus */
+}
+.mote-dot.is-caught {
+  animation: mote-catch var(--dur-slow) forwards;
+}
+@keyframes mote-catch {
+  0% { transform: translateY(0) scale(1); opacity: 1; animation-timing-function: var(--ease-spring); }
+  30% { transform: translateY(-5px) scale(1.5); opacity: 1; animation-timing-function: var(--ease-out); }
+  100% { transform: translateY(-9px) scale(0); opacity: 0; }
+}
+.mote-halo,
+.mote-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.mote-halo {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 212, 71, 0.8);
+  animation: mote-halo var(--dur-slow) var(--ease-out) forwards;
+}
+@keyframes mote-halo {
+  from { transform: scale(0.3); opacity: 0.9; }
+  to { transform: scale(2.2); opacity: 0; }
+}
+.mote-spark {
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: var(--leaf);
+  box-shadow: 0 0 6px rgba(255, 212, 71, 0.9);
+  animation: mote-spark var(--dur-slow) var(--ease-out) forwards;
+}
+@keyframes mote-spark {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+/* ── Water-strip arrows ──────────────────────────────────────────────
+   Position rides on `transform`; the press uses the separate `scale`
+   property, so the two compose instead of overwriting each other. ── */
+.water-arrow {
+  /* transitions are set inline, next to the position they ride with;
+     the arrow is position:absolute inline, so ::after anchors to it */
+  background: rgba(8, 9, 9, 0.55);
+  -webkit-tap-highlight-color: transparent;
+}
+/* the hover ring: a pre-painted layer that only fades, so hover never
+   repaints (no box-shadow or background transition) */
+.water-arrow::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(255, 212, 71, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.water-arrow:active {
+  scale: 0.92;
+}
+.water-arrow:focus-visible {
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cloud-nav:hover {
+    transform: translateY(-4px);
+  }
+  .cloud-nav:hover .cloud-rim {
+    fill: rgba(255, 212, 71, 0.42);
+  }
+  .water-arrow:hover::after {
+    opacity: 1;
+  }
+}
+
+/* ── Hero actions ────────────────────────────────────────────────── */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+.hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+}
+button.hero-action { color: #080909; }
+.hero-action--ghost {
+  background: rgba(255, 249, 232, 0.06);
+  border: 1px solid rgba(255, 249, 232, 0.18);
+  color: var(--cream, #FFF9E8);
+}
+.hero-action:active { transform: scale(0.97); }
+@media (pointer: coarse) {
+  .hero-action { min-height: 44px; }
+}
+@media (max-height: 560px) {
+  .hero-actions { display: none; }
+}
+
+/* ── Shell accessibility ─────────────────────────────────────────── */
+section[id^="panel-"]:focus { outline: none; }
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #FFD447;
+  color: #080909;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.skip-link:focus-visible { transform: none; }
+.kbd-hint .kbd-key { transition: color var(--dur-base) var(--ease-out); }
+.kbd-hint .kbd-key.is-on { color: #FFD447; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-boot] .welcome .wl,
+  .welcome .wl { animation: none; opacity: 1; }
+  .scroll-cue-arrow { animation: none; }
+  .water-arrow::after { transition: none; }
+  .cloud-nav,
+  .cloud-rim { transition: none; }
+  .cloud-nav:hover,
+  .cloud-nav:active { transform: none; }
+  .mote-halo,
+  .mote-spark { display: none; }
+  .skip-link,
+  .kbd-hint .kbd-key { transition: none; }
+  .hero-action:active { transform: none; }
+}

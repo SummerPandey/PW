@@ -18,6 +18,8 @@ type WaterProps = {
   duckVel: number; // signed, % per frame (smoothed)
   splash: number; // counter; each increment spawns a ripple ring at duckX
   reducedMotion: boolean;
+  /** True while the strip is faded out: the loop sleeps, the last frame stays. */
+  paused?: boolean;
 };
 
 const HORIZON = 0.45;
@@ -340,12 +342,18 @@ export function PixelWater(props: WaterProps) {
     rafId: 0,
   });
 
-  const { reducedMotion } = props;
+  const { reducedMotion, paused = false } = props;
+  const kickRef = useRef<() => void>(() => {});
 
   // Keep the latest props in a ref so the rAF loop never restarts on change.
   useEffect(() => {
     propsRef.current = props;
   });
+
+  // Fading in or out wakes or parks the loop (after the ref above updates).
+  useEffect(() => {
+    kickRef.current();
+  }, [paused]);
 
   // Size the low-res buffer to the strip and pre-draw the background.
   useEffect(() => {
@@ -384,7 +392,10 @@ export function PixelWater(props: WaterProps) {
     const s = sim.current;
 
     const shouldRun = () =>
-      !propsRef.current.reducedMotion && s.onScreen && document.visibilityState === "visible";
+      !propsRef.current.reducedMotion &&
+      !propsRef.current.paused &&
+      s.onScreen &&
+      document.visibilityState === "visible";
 
     const tick = (now: number) => {
       s.rafId = 0;
@@ -419,6 +430,7 @@ export function PixelWater(props: WaterProps) {
     });
     io.observe(wrap);
     document.addEventListener("visibilitychange", kick);
+    kickRef.current = kick;
 
     // Reduced motion: one static frame, no loop.
     if (reducedMotion) {
@@ -429,6 +441,7 @@ export function PixelWater(props: WaterProps) {
     kick();
 
     return () => {
+      kickRef.current = () => {};
       io.disconnect();
       document.removeEventListener("visibilitychange", kick);
       if (s.rafId) cancelAnimationFrame(s.rafId);

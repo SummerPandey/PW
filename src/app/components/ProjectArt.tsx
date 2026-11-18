@@ -12,6 +12,8 @@ import { C } from "./theme";
    - exactly ONE sunlight-yellow "sun" per piece, sitting where the
      project's transformation happens — the site's motif on every card
    The only fill allowed is the pixel duck, because he's the mascot.
+   - the sun carries `art-halo` (a Sun's halo disc) or `art-sun` (a
+     hand-drawn sun, whole) so it can answer the cursor on hover
    ──────────────────────────────────────────────────────────────────── */
 
 const F = "rgba(255,249,232,0.24)"; // structure / context
@@ -50,10 +52,12 @@ function ArtFrame({ children }: { children: ReactNode }) {
   );
 }
 
+/** The sun: a halo disc behind a solid core. The halo carries `art-halo`
+    so it can swell when the card is hovered (see styles/works.css). */
 function Sun({ x, y }: { x: number; y: number }) {
   return (
     <>
-      <circle cx={x} cy={y} r={7} fill={H} />
+      <circle className="art-halo" cx={x} cy={y} r={7} fill={H} />
       <circle cx={x} cy={y} r={2.8} fill={S} />
     </>
   );
@@ -85,7 +89,7 @@ export const CryptoArt = () => (
 export const PiCarArt = () => (
   <ArtFrame>
     <path stroke={F} d="M8 56 H152" />
-    <path stroke={S} fill={H} d="M70 56 A10 10 0 0 1 90 56" />
+    <path className="art-sun" stroke={S} fill={H} d="M70 56 A10 10 0 0 1 90 56" />
     <path stroke={L} d="M76 59 L30 96 M84 59 L130 96" />
     <path stroke={L} d="M80 64 V67 M80 73 V78 M80 85 V93" />
     <path stroke={F} d="M50 70 V64 H56 M104 64 H110 V70 M110 88 V94 H104 M56 94 H50 V88" />
@@ -115,7 +119,7 @@ export const PortfolioArt = () => (
     <rect stroke={F} x={18} y={28} width={36} height={48} rx={5} />
     <rect stroke={L} x={62} y={18} width={36} height={66} rx={5} />
     <rect stroke={F} x={106} y={28} width={36} height={48} rx={5} />
-    <path stroke={S} fill={H} d="M73 52 A7 7 0 0 1 87 52 M80 40.5 V37.5 M71.5 44 L69.5 42 M88.5 44 L90.5 42" />
+    <path className="art-sun" stroke={S} fill={H} d="M73 52 A7 7 0 0 1 87 52 M80 40.5 V37.5 M71.5 44 L69.5 42 M88.5 44 L90.5 42" />
     <path stroke={L} d="M67 52 H93" />
     <image href="/images/duck-pixel.png" x={73.5} y={61} width={13} height={13.6} style={{ imageRendering: "pixelated" }} />
     <path stroke={F} d="M68 77 H74 M86 78 H92" />
@@ -146,7 +150,7 @@ export const AuraTVArt = () => (
     <rect stroke="rgba(255,249,232,0.12)" x={40} y={12} width={80} height={60} rx={14} />
     <rect stroke={F} x={46} y={18} width={68} height={48} rx={10} />
     <rect stroke={L} x={52} y={24} width={56} height={36} rx={6} />
-    <path stroke={S} fill={H} d="M75.5 35 L86.5 42 L75.5 49 Z" />
+    <path className="art-sun" stroke={S} fill={H} d="M75.5 35 L86.5 42 L75.5 49 Z" />
     <g stroke={F}>
       <rect x={43.5} y={80} width={16} height={9} rx={2} />
       <rect x={62.5} y={80} width={16} height={9} rx={2} />
@@ -161,8 +165,10 @@ export const VolleyballArt = () => (
   <ArtFrame>
     <path stroke={F} d="M18 22 H46 V40 H18 M18 60 H46 V78 H18 M46 31 H70 M46 69 H70" />
     <path stroke={L} d="M70 31 V69 M70 50 H96" />
-    <circle stroke={S} fill={H} cx={114} cy={50} r={14} />
-    <path stroke={S} d="M114 50 C114 42 110 38 106 38.5 M114 50 C121 46 127 47 128 50.5 M114 50 C110 57 111 62 114 64" />
+    <g className="art-sun">
+      <circle stroke={S} fill={H} cx={114} cy={50} r={14} />
+      <path stroke={S} d="M114 50 C114 42 110 38 106 38.5 M114 50 C121 46 127 47 128 50.5 M114 50 C110 57 111 62 114 64" />
+    </g>
   </ArtFrame>
 );
 

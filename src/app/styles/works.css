@@ -1,0 +1,591 @@
+/* ────────────────────────────────────────────────────────────────────
+   works.css — the Works panel (project cards, résumé strip, closing CTA).
+   Imported from WorkPage.tsx. Reuses the motion tokens on :root in
+   globals.css (--ease-out, --ease-inout, --dur-*). Everything that moves
+   here moves on transform or opacity; hover-only motion is gated to real
+   pointers; reduced motion gets the end state with no travel.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* ── masthead ─────────────────────────────────────────────────────── */
+
+.works-masthead {
+  display: grid;
+  gap: 16px;
+}
+.works-title {
+  margin: 0;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.024em;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+/* the italic cut is already in the Google Fonts request (ital 500) */
+.works-title em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--sun);
+  letter-spacing: -0.018em;
+}
+.works-lead {
+  margin: 0;
+  max-width: 58ch;
+  font-size: clamp(15px, 1.15vw, 16.5px);
+  font-weight: 500;
+  line-height: 1.65;
+  color: var(--moss);
+  text-wrap: pretty;
+}
+@media (min-width: 1000px) {
+  /* H1 left, lead right, both settling on the same bottom edge */
+  .works-masthead {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 52ch);
+    column-gap: 56px;
+    row-gap: 16px;
+    align-items: end;
+  }
+  /* eyebrow sits right on the H1 in the left column; the lead spans both
+     rows on the right, so the eyebrow never floats loose above it */
+  .works-masthead > :nth-child(1) { grid-column: 1; grid-row: 1; }
+  .works-masthead > :nth-child(2) { grid-column: 1; grid-row: 2; }
+  .works-masthead > :nth-child(3) { grid-column: 2; grid-row: 1 / span 2; align-self: end; }
+  .works-lead { padding-bottom: 4px; }
+}
+
+/* hairline under the filters: draws in from the left, fading out to the right */
+.works-rule {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(234, 170, 34, 0.45), #373221 24%, #373221 72%, rgba(55, 50, 33, 0));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-inout) 160ms;
+}
+.reveal.in .works-rule { transform: scaleX(1); }
+
+/* ── filter rail: one gold pill that glides under the active tab ──── */
+
+.filter-rail {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.filter-rail__pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--pill-w, 0px);
+  height: var(--pill-h, 0px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFD447, #EAAA22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4);
+  transform: translate3d(var(--pill-x, 0px), var(--pill-y, 0px), 0);
+  opacity: 0;
+  pointer-events: none;
+  /* width changes only re-lay-out this one out-of-flow box */
+  contain: layout paint style;
+  will-change: transform;
+}
+.filter-rail.is-ready .filter-rail__pill {
+  opacity: 1;
+  transition: transform var(--dur-slow) var(--ease-out), width var(--dur-slow) var(--ease-out),
+    height var(--dur-slow) var(--ease-out), opacity var(--dur-base) var(--ease-out);
+}
+/* tabs are see-through so the pill can travel under its neighbours */
+.filter-rail .filter-rail__tab {
+  background: transparent;
+  border: 1px solid #373221;
+  color: var(--moss);
+}
+.filter-rail .filter-rail__tab[aria-pressed="true"] {
+  color: #080909;
+  border-color: transparent;
+}
+/* the incoming label holds its colour until the pill is ~75-85% of the way
+   under it (measured on the longest jump, Robotics to AI/ML), so it never
+   darkens on the bare ground.
+   No background in the list: tabs are transparent. */
+.filter-rail.is-ready .filter-rail__tab {
+  transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.filter-rail.is-ready .filter-rail__tab[aria-pressed="true"] {
+  transition-delay: 200ms, 0s, 0s;
+}
+.filter-rail__count {
+  font-weight: 600;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.filter-rail__tab[aria-pressed="true"] .filter-rail__count { opacity: 0.7; }
+
+/* ── project cards ────────────────────────────────────────────────── */
+
+/* a slightly tighter lens than the global 1600px: the turn reads as a
+   turn on a ~300px card without warping its text. Desktop only — mobile
+   keeps the global instant toggle. */
+@media (min-width: 641px) {
+  .works-grid .flip-scene { perspective: 1200px; }
+  /* the tallest case-study backs set row 1's height; let the banner take
+     the slack instead of leaving a dead band above "View details" (art is
+     centred, photos use cover, so a taller banner just shows more) */
+  .works-grid .card-banner { max-height: 340px; }
+}
+
+/* hover: a 3px lift and a deeper shadow that fades in (opacity, not
+   box-shadow, so nothing repaints per frame) */
+.works-grid .flip-scene { isolation: isolate; }
+.works-grid .flip-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 22px;
+  box-shadow: 0 30px 50px -28px rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+/* one gold hairline on hover: the face's own border, eased (the hover
+   colour comes from the global .flip-scene:hover rule) */
+.works-grid .flip-face-front { transition: border-color var(--dur-base) var(--ease-out); }
+
+/* a soft patch of sunlight that drifts across the banner with the pointer */
+.card-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 212, 71, 0.2), rgba(255, 212, 71, 0.06) 55%, rgba(255, 212, 71, 0));
+  opacity: 0;
+  transform: translate3d(calc((var(--px, 0.5) - 0.5) * 80%), calc((var(--py, 0.3) - 0.3) * 70%), 0) scale(1.4);
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+
+/* project art: the sun answers the cursor — the halo swells and holds,
+   then eases back down on leave (transition on the base state, no loop) */
+svg.art .art-halo,
+svg.art .art-sun {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+/* "View details" arrow nudges like the other card arrows on the site */
+.card-flip-btn svg { transition: transform var(--dur-base) var(--ease-out); }
+
+@media (hover: hover) and (pointer: fine) {
+  .works-grid .flip-scene:hover::before,
+  .works-grid .flip-scene:has(:focus-visible)::before { opacity: 1; }
+  .works-grid .flip-scene:hover .flip-card:not(.is-flipped) .card-sheen,
+  .works-grid .flip-scene:has(:focus-visible) .flip-card:not(.is-flipped) .card-sheen { opacity: 1; }
+  .card-flip-btn:hover svg { transform: translate(2px, -2px); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .works-grid .flip-scene { transition: transform var(--dur-base) var(--ease-out); }
+  .works-grid .flip-scene:hover,
+  .works-grid .flip-scene:has(:focus-visible) { transform: translateY(-3px); }
+  .flip-scene:hover .flip-card:not(.is-flipped) svg.art .art-halo { transform: scale(1.32); }
+  .flip-scene:hover .flip-card:not(.is-flipped) svg.art .art-sun { transform: scale(1.1); }
+}
+
+/* the turn catches light: each face dims as it goes edge-on and brightens
+   as it lands (opacity only). Two identical keyframes, alternated by class,
+   so every flip restarts the animation; no class at all on first paint. */
+.works-grid .flip-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(115deg, rgba(255, 212, 71, 0.18) 0%, rgba(255, 212, 71, 0) 55%), #080909;
+}
+@media (min-width: 641px) {
+  .works-grid .flip-card.turn-a .flip-face::after { animation: flip-shade-a var(--dur-slow) var(--ease-inout); }
+  .works-grid .flip-card.turn-b .flip-face::after { animation: flip-shade-b var(--dur-slow) var(--ease-inout); }
+}
+@keyframes flip-shade-a { 50% { opacity: 0.45; } }
+@keyframes flip-shade-b { 50% { opacity: 0.45; } }
+
+/* phones: the instant toggle becomes a short eased reveal of whichever
+   face just appeared (faces are display:none until then, so nothing runs
+   on load) */
+@media (max-width: 640px) {
+  .works-grid .flip-card.turn-a .flip-face { animation: face-in-a var(--dur-base) var(--ease-out); }
+  .works-grid .flip-card.turn-b .flip-face { animation: face-in-b var(--dur-base) var(--ease-out); }
+}
+@keyframes face-in-a { from { opacity: 0; transform: translateY(6px); } }
+@keyframes face-in-b { from { opacity: 0; transform: translateY(6px); } }
+
+/* one real number on the card front: a small gold-tinted chip that
+   hugs its content (the face is a flex column, so no stretch) */
+.card-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 5px 11px 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(234, 170, 34, 0.28);
+  background: rgba(234, 170, 34, 0.08);
+  align-self: flex-start;
+  max-width: 100%;
+}
+.card-metric__value {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  color: #FFD447;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.card-metric__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--moss, #B9B5A8);
+  letter-spacing: 0.01em;
+}
+
+/* ── card back: a small case-study sheet ──────────────────────────── */
+
+.case-back {
+  padding: 14px 16px;
+}
+.case-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.case-titles { min-width: 0; }
+.case-title {
+  padding-top: 3px;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: #FFF9E8;
+  text-wrap: balance;
+}
+.case-when {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 249, 232, 0.55);
+}
+.case-flip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-family: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  color: #FFF9E8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+}
+.case-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+.case-section {
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 249, 232, 0.08);
+}
+.case-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.case-label {
+  font-family: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sun);
+}
+.case-text {
+  margin-top: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255, 249, 232, 0.8);
+  text-wrap: pretty;
+}
+.case-section.is-outcome .case-text {
+  color: #FFF9E8;
+  font-weight: 600;
+}
+/* single-section ("Overview") backs: a lede, so the sheet doesn't look empty */
+.case-section.is-lede .case-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 249, 232, 0.92);
+}
+.case-tech {
+  margin-top: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #FFF9E8;
+}
+.case-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 249, 232, 0.08);
+}
+.case-foot:empty { display: none; }
+.case-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-family: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  color: #FFF9E8;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #373221;
+}
+.case-link.btn-gold { border-color: transparent; }
+
+/* the sheet's content lands as the card finishes turning, top to bottom */
+@keyframes case-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+.works-grid .flip-card.is-flipped .case-section,
+.works-grid .flip-card.is-flipped .case-foot {
+  animation: case-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(160ms + var(--i, 0) * 45ms);
+}
+@media (max-width: 640px) {
+  .works-grid .flip-card.is-flipped .case-section,
+  .works-grid .flip-card.is-flipped .case-foot { animation-delay: calc(var(--i, 0) * 35ms); }
+}
+
+/* ── résumé strip ─────────────────────────────────────────────────── */
+
+.rs-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 56px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "exp" "edu" "tools";
+}
+@media (min-width: 641px) {
+  .rs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "exp edu" "tools tools";
+  }
+}
+@media (min-width: 1001px) {
+  /* Toolbox becomes a tall right column beside Experience over Education */
+  .rs-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    grid-template-areas: "exp tools" "edu tools";
+  }
+}
+.rs-card {
+  flex: 1;
+  min-width: 0;
+  padding: 22px 24px;
+}
+.rs-entry {
+  position: relative;
+  padding-left: 18px;
+}
+.rs-entry + .rs-entry { margin-top: 16px; }
+/* a small sun on each entry, sitting on the title's first line */
+.rs-entry::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sun);
+  box-shadow: 0 0 0 3px rgba(234, 170, 34, 0.16);
+}
+.rs-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.35;
+  color: #FFF9E8;
+}
+.rs-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: rgba(255, 249, 232, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+/* Experience card: the full résumé link settles at the card's bottom */
+.rs-card:has(> .rs-pdf) {
+  display: flex;
+  flex-direction: column;
+}
+.rs-pdf {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #FFD447;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.rs-pdf:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rs-divider {
+  height: 1px;
+  margin: 18px 0 16px;
+  background: #373221;
+}
+.rs-groups {
+  display: grid;
+  gap: 18px 22px;
+  margin-top: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 480px) {
+  .rs-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.rs-group-label {
+  margin-bottom: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 249, 232, 0.5);
+}
+.rs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* static chips: not clickable, so they don't react to hover */
+.rs-chip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #FFF9E8;
+  background: rgba(234, 170, 34, 0.1);
+  border: 1px solid #373221;
+}
+
+/* ── closing CTA: lit from below as it arrives ────────────────────── */
+
+.closing-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.closing-cta::before {
+  content: "";
+  position: absolute;
+  left: 32%;
+  bottom: 0;
+  z-index: -1;
+  width: min(680px, 140%);
+  height: 260px;
+  background: radial-gradient(closest-side, rgba(255, 212, 71, 0.2), rgba(234, 170, 34, 0.07) 55%, rgba(234, 170, 34, 0));
+  opacity: 0;
+  transform: translate(-50%, 58%);
+  pointer-events: none;
+}
+.reveal.in .closing-cta::before {
+  animation: cta-sunrise var(--dur-slow) var(--ease-out) 160ms both;
+}
+@keyframes cta-sunrise {
+  from { opacity: 0; transform: translate(-50%, 78%) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, 58%); }
+}
+.cta-accent {
+  position: relative;
+  display: inline-block;
+  font-style: italic;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cta-accent::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 0.02em;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--leaf), var(--sun));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-out) 360ms;
+}
+.reveal.in .cta-accent::after { transform: scaleX(1); }
+.cta-back svg { transition: transform var(--dur-base) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+  .cta-back:hover svg { transform: translateX(-2px); }
+}
+
+/* ── reduced motion: end states, no travel ────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .works-rule,
+  .reveal.in .works-rule { transform: none; transition: none; }
+  .filter-rail.is-ready .filter-rail__pill { transition: opacity var(--dur-fast) linear; }
+  .card-sheen,
+  .card-flip-btn svg,
+  .cta-back svg,
+  .filter-rail__count,
+  svg.art .art-halo,
+  svg.art .art-sun { transition: none; }
+  .works-grid .flip-scene::before { transition: none; }
+  /* global .tab goes still under reduced motion; keep the rail tabs still too */
+  .filter-rail.is-ready .filter-rail__tab { transition: none; }
+  /* no eased border; keep the global reduced-motion face cross-fade */
+  .works-grid .flip-face-front { transition: opacity 0.2s ease; }
+  .works-grid .flip-card .flip-face,
+  .works-grid .flip-card .flip-face::after,
+  .works-grid .flip-card.is-flipped .case-section,
+  .works-grid .flip-card.is-flipped .case-foot { animation: none !important; }
+  .reveal.in .closing-cta::before { animation: none; opacity: 1; }
+  .cta-accent::after { transition: none; transform: scaleX(1); }
+}

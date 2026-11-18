@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Quicksand:wght@400;500;600;700&display=swap");
+/* Fraunces + Quicksand are self-hosted by next/font in layout.tsx and
+   exposed as --font-fraunces / --font-quicksand on <html>, so there is no
+   third-party stylesheet blocking the first paint. */
 @import "tailwindcss";
 
 :root {
@@ -19,18 +21,39 @@
   --dur-fast: 120ms;
   --dur-base: 200ms;
   --dur-slow: 480ms;
+
+  /* full-screen height that never hides content behind a mobile browser's
+     toolbar and never changes while that toolbar collapses (falls back to
+     100vh where svh isn't supported) */
+  --app-h: 100vh;
+
+  color-scheme: dark;
+  caret-color: var(--leaf);
+}
+@supports (height: 100svh) {
+  :root { --app-h: 100svh; }
 }
 
-html,
-body {
-  background:
+/* the sky is painted once, on the canvas (it used to be painted twice,
+   on html and again on body); #080909 underneath means no flash before
+   the gradient decodes */
+html {
+  background-color: #080909;
+  background-image:
     radial-gradient(1100px 620px at 82% -8%, rgba(234, 170, 34, 0.14), transparent 60%),
     radial-gradient(900px 560px at 102% 42%, rgba(234, 170, 34, 0.08), transparent 55%),
     radial-gradient(1000px 600px at 0% 112%, rgba(0, 0, 0, 0.6), transparent 60%),
     linear-gradient(180deg, #0a0b0a 0%, #050505 100%);
   background-attachment: fixed;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: transparent;
   color: var(--foreground);
-  font-family: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -50,15 +73,28 @@ body::after {
   background-size: 180px 180px;
 }
 
+/* dark text needs a strong sun behind it: at 35% the highlight read as
+   murky olive (~2.5:1); at 78% it's ~7:1 */
 ::selection {
-  background: rgba(255, 212, 71, 0.35);
+  background: rgba(255, 212, 71, 0.78);
   color: #080909;
 }
 
+/* one sunlight focus ring. No forced border-radius: outlines already
+   follow each element's own radius, and setting one here used to reshape
+   square elements the moment they took focus. */
 :focus-visible {
   outline: 2px solid var(--leaf);
   outline-offset: 3px;
-  border-radius: 6px;
+}
+
+/* taps never wait on double-tap-zoom detection */
+a,
+button,
+[role="button"],
+input,
+label {
+  touch-action: manipulation;
 }
 
 /* hide the scrollbar on the horizontal panel scroller */
@@ -71,7 +107,17 @@ body::after {
 
 /* display / headings use the soft organic serif */
 .serif {
-  font-family: "Fraunces", Georgia, serif;
+  font-family: var(--font-fraunces), Georgia, serif;
+}
+
+/* even headline rags and no lonely last words in paragraphs. Headings
+   that host the typewriter are skipped: balancing re-flows lines on
+   every typed character. */
+:where(h1, h2, h3):not(:has([data-typewriter])) {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
 }
 
 /* golden scrollbar — sunlight yellow fading into black */
@@ -84,8 +130,23 @@ body::after {
   border-radius: 999px;
   border: 2px solid #080909;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFD447, #3a3320);
+}
 ::-webkit-scrollbar-track {
   background: #080909;
+}
+/* Firefox has no ::-webkit-scrollbar; give it the same gold on black
+   (scoped, because in Chromium scrollbar-color would switch off the
+   gradient thumb above) */
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #EAAA22 #080909;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
 }
 
 /* ───────────────────────── lo-fi FX ───────────────────────── */
@@ -120,10 +181,6 @@ body::after {
   0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 1; }
   50% { transform: translateY(50vh) translateX(40px) rotate(180deg); }
   100% { transform: translateY(110vh) translateX(-10px) rotate(420deg); opacity: 0.1; }
-}
-@keyframes boot-bar {
-  from { width: 0%; }
-  to { width: 100%; }
 }
 @keyframes float-y {
   0%, 100% { transform: translateY(0); }
@@ -232,7 +289,7 @@ body::after {
 
 /* the delight layer's bouncy buttons — nav clouds, duck chat */
 .btn-bounce {
-  transition: transform 0.2s var(--ease-spring);
+  transition: transform var(--dur-base) var(--ease-spring);
 }
 .btn-bounce:active {
   transform: scale(0.94);
@@ -259,11 +316,14 @@ body::after {
    uses the `scale`/`translate` properties and a `both` fill, and the hover
    wobble lives on the inner glyph — so hovering can never restart the
    entrance (which used to blink badges out mid-hover). */
-.badge {
+[data-js] .badge {
   opacity: 0;
 }
+/* `backwards` holds the from-frame through the stagger delay; once the
+   entrance ends the plain rule takes over, so no scale/translate lingers */
 .reveal.in .badge {
-  animation: badge-in var(--dur-slow) var(--ease-out) both;
+  opacity: 1;
+  animation: badge-in var(--dur-slow) var(--ease-out) backwards;
 }
 .reveal.in .badge:first-child {
   animation-timing-function: var(--ease-spring);
@@ -292,12 +352,17 @@ body::after {
   animation: sway 3.6s ease-in-out infinite;
 }
 
-/* scroll-reveal wrapper */
-.reveal {
+/* scroll-reveal wrapper. Hidden only once layout.tsx has marked
+   <html data-js>, so no-JS and pre-hydration HTML stay readable.
+   `backwards` holds the from-frame only during the delay; the settled
+   state is the plain .in rule, so no transform lingers to create a
+   containing block / stacking context on every revealed section. */
+[data-js] .reveal {
   opacity: 0;
 }
-.reveal.in {
-  animation: reveal-up var(--dur-slow) var(--ease-out) both;
+[data-js] .reveal.in {
+  opacity: 1;
+  animation: reveal-up var(--dur-slow) var(--ease-out) backwards;
 }
 
 /* filter tabs & "View details" — color crossfade, no scale */
@@ -416,8 +481,10 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; animation: none; }
-  .badge { opacity: 1; }
+  .reveal,
+  [data-js] .reveal { opacity: 1; animation: none; }
+  .badge,
+  [data-js] .badge { opacity: 1; }
   .reveal.in,
   .reveal.in .badge,
   .cursor,
@@ -436,6 +503,292 @@ body::after {
   .tab,
   .icon-btn,
   .chip { transition: none; }
+}
+
+/* ───────────────────────── boot screen ─────────────────────────
+   One hand-off, all compositor: the overlay cross-fades out on
+   --ease-inout while its mark lifts away, and the site is already
+   interactive underneath (pointer-events: none from the first frame
+   of the exit). */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(900px 600px at 50% -10%, rgba(234, 170, 34, 0.2), transparent 60%),
+    linear-gradient(180deg, #121313 0%, #080909 100%);
+  cursor: pointer;
+  transition: opacity var(--dur-slow) var(--ease-inout), visibility 0s linear var(--dur-slow);
+}
+.boot.is-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* seen it already this session: hidden before first paint */
+html[data-boot="skip"] .boot {
+  display: none;
+}
+.boot-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  transition: transform var(--dur-slow) var(--ease-out), opacity var(--dur-base) var(--ease-out);
+}
+.boot.is-leaving .boot-mark {
+  transform: translateY(-12px) scale(1.02);
+  opacity: 0;
+}
+/* the shipped composition, kept on purpose: the sun's left edge sits on
+   the stem's axis, so it rises up and to the right and the leaves stay
+   readable against the dark instead of the sun's disc */
+.boot-sun-wrap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+}
+.boot-sun {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFD447, #EAAA22);
+  box-shadow: 0 0 38px rgba(234, 170, 34, 0.5);
+}
+.boot-sprout {
+  transform-origin: bottom center;
+  animation: grow 1.1s var(--ease-spring) both;
+}
+/* the words settle in one after another under the sprout */
+.boot-line {
+  animation: reveal-up var(--dur-slow) var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--i, 0) * 70ms);
+}
+.boot-track {
+  width: 240px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(255, 249, 232, 0.12);
+  overflow: hidden;
+}
+.boot-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--leaf), var(--sun));
+  /* slid in from the left (not scaled) so the leading edge keeps its true
+     pill cap; the track's overflow + radius clips the trailing end */
+  transform: translateX(-100%);
+  will-change: transform;
+}
+.boot-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 249, 232, 0.6);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* opt-in hook for other surfaces: anything with .boot-gate stays hidden
+   until the boot hands off, then fades in on the same beat */
+.boot-gate {
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+html[data-js]:not([data-boot]) .boot-gate {
+  opacity: 0;
+}
+
+/* ───────────────────── achievement toast + confetti ───────────────────── */
+@keyframes unlock-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes unlock-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+@keyframes unlock-spark {
+  from { transform: rotate(-120deg) scale(0.4); opacity: 0; }
+  to { transform: rotate(0) scale(1); opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.unlock-region {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  z-index: 96;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+.unlock-pill {
+  animation: unlock-in var(--dur-slow) var(--ease-spring) both;
+}
+.unlock-pill.is-leaving {
+  animation: unlock-out var(--dur-base) var(--ease-out) both;
+}
+.unlock-spark {
+  display: inline-block;
+  animation: unlock-spark var(--dur-slow) var(--ease-spring) 120ms backwards;
+}
+.ember {
+  position: absolute;
+  top: 0;
+}
+
+/* ─────────────────────────── duck chat ───────────────────────────
+   The whole popup (duck + panel) grows from its bottom-right corner,
+   where the duck lives, and sinks back on close. */
+@keyframes duck-chat-in {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.96); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes duck-chat-out {
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.97); }
+}
+@keyframes duck-peek-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.86); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes chat-msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.duck-chat {
+  transform-origin: 100% 100%;
+}
+.duck-chat[data-state="open"] {
+  animation: duck-chat-in var(--dur-slow) var(--ease-out) backwards;
+}
+.duck-chat[data-state="closed"] {
+  animation: duck-chat-out var(--dur-base) var(--ease-out) forwards;
+  pointer-events: none;
+}
+/* the duck pops its head up a beat after the panel lands (delight layer) */
+.duck-chat-peek {
+  transform-origin: 50% 100%;
+}
+.duck-chat[data-state="open"] .duck-chat-peek {
+  animation: duck-peek-pop var(--dur-slow) var(--ease-spring) 100ms backwards;
+}
+.duck-chat-panel {
+  max-height: min(480px, calc(100vh - 100px));
+}
+@supports (height: 100svh) {
+  .duck-chat-panel { max-height: min(480px, calc(100svh - 100px)); }
+}
+.chat-msg {
+  animation: chat-msg-in var(--dur-base) var(--ease-out) backwards;
+}
+.duck-input {
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.duck-input::placeholder {
+  color: rgba(255, 249, 232, 0.4);
+}
+/* a soft sunlight ring that hugs the pill (the global outline would sit
+   3px off it and crowd the send button) */
+.duck-input:focus-visible {
+  outline: none;
+  border-color: rgba(255, 212, 71, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 212, 71, 0.16);
+}
+.chat-send {
+  transition: transform var(--dur-base) var(--ease-spring), opacity var(--dur-base) var(--ease-out);
+}
+/* starter questions under the greeting */
+.duck-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+}
+.duck-chip {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFD447;
+  background: rgba(255, 212, 71, 0.06);
+  border: 1px solid rgba(255, 212, 71, 0.28);
+  border-radius: 999px;
+  padding: 6px 11px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.duck-chip:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .duck-chip:hover { background: rgba(255, 212, 71, 0.14); }
+}
+@media (pointer: coarse) {
+  .duck-chip { min-height: 36px; }
+}
+/* résumé + email row between the messages and the input */
+.duck-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 10px 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.duck-links a {
+  color: rgba(255, 249, 232, 0.7);
+  text-decoration: none;
+}
+.duck-links a:hover { color: #FFD447; }
+@media (forced-colors: active) {
+  .duck-input:focus-visible { outline: 2px solid CanvasText; }
+}
+
+/* reduced motion for the system layer: no travel, no spring — entrances
+   are instant and exits are plain, short fades (kept here, after the
+   rules they override) */
+@media (prefers-reduced-motion: reduce) {
+  .boot-sprout,
+  .boot-line,
+  .unlock-spark,
+  .chat-msg,
+  .duck-chat,
+  .duck-chat-peek { animation: none !important; }
+  .boot { transition: opacity var(--dur-base) linear, visibility 0s linear var(--dur-base); }
+  .boot-mark { transition: none; }
+  .boot.is-leaving .boot-mark { transform: none; opacity: 1; }
+  .boot-gate,
+  .duck-input,
+  .chat-send,
+  .duck-chip { transition: none; }
+  .unlock-pill { animation: fade-in var(--dur-base) linear both; }
+  .unlock-pill.is-leaving { animation: fade-out var(--dur-base) linear both; }
+}
+
+/* touch: iOS zooms the page when focusing text under 16px, and small
+   icon buttons get an invisible hit area to reach ~44px */
+@media (pointer: coarse) {
+  .duck-input { font-size: 16px; }
+  .hit { position: relative; }
+  .hit::before {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: inherit;
+  }
 }
 
 /* ── flip-card — project cards that flip to a case-study back face ───

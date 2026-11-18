@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { C, FONT } from "./theme";
 
 /* ────────────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ export function CodingDuck({
           filter: awake
             ? "drop-shadow(0 0 12px rgba(255,212,71,0.4))"
             : "drop-shadow(0 0 6px rgba(234,170,34,0.2))",
-          transition: "filter 0.35s ease",
+          transition: "filter var(--dur-slow) var(--ease-out)",
         }}
       >
         <g
@@ -99,7 +99,7 @@ export function CodingDuck({
           y={100}
           dominantBaseline="central"
           textAnchor="middle"
-          fontFamily={FONT}
+          style={{ fontFamily: FONT }}
           fontSize={11.5}
           fontWeight={700}
           fill="#FFF9E8"
@@ -126,7 +126,7 @@ export function CodingDuck({
             y={319}
             dominantBaseline="central"
             textAnchor="middle"
-            fontFamily={FONT}
+            style={{ fontFamily: FONT }}
             fontSize={13}
             fontWeight={700}
             fill="#FFF9E8"
@@ -275,7 +275,7 @@ export function Typewriter({
   }, [started, typed, text, speed]);
 
   return (
-    <span ref={ref} style={{ whiteSpace: "pre-line", ...style }}>
+    <span ref={ref} data-typewriter="" style={{ whiteSpace: "pre-line", ...style }}>
       {/* screen readers get the whole line once, not a character at a time */}
       <span className="sr-only">{text.replace(/\n/g, " ")}</span>
       <span aria-hidden>
@@ -288,7 +288,50 @@ export function Typewriter({
   );
 }
 
-/* ── Reveal — settles children in the first time they scroll into view ── */
+/* ── Reveal — settles children in the first time they scroll into view ──
+   One shared IntersectionObserver serves every Reveal on the page. A Reveal
+   that mounts already on screen (the Works filter re-mounts its grid) is
+   marked in before the browser paints, so a filter swap never blanks the
+   grid for a frame. The settled state carries no transform (see .reveal
+   in globals.css), so finished reveals leave no layers behind. ───────── */
+
+const revealCallbacks = new Map<Element, () => void>();
+let revealObserver: IntersectionObserver | null = null;
+/* During the very first frames the horizontal track hasn't been centered
+   on Welcome yet, so a "is it on screen?" check would wrongly pass for the
+   About panel. Only trust that check once the page has settled. */
+let revealSettled = false;
+
+function observeReveal(el: Element, onIn: () => void) {
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          revealCallbacks.get(entry.target)?.();
+          revealCallbacks.delete(entry.target);
+          revealObserver?.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+    window.setTimeout(() => {
+      revealSettled = true;
+    }, 400);
+  }
+  revealCallbacks.set(el, onIn);
+  revealObserver.observe(el);
+}
+
+function unobserveReveal(el: Element) {
+  revealCallbacks.delete(el);
+  revealObserver?.unobserve(el);
+}
+
+function isOnScreenNow(el: Element) {
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.top < window.innerHeight - 40 && r.right > 0 && r.left < window.innerWidth;
+}
 
 export function Reveal({
   children,
@@ -302,20 +345,16 @@ export function Reveal({
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    if (revealSettled && isOnScreenNow(el)) {
+      // a layout-effect state update flushes before paint: no blank frame
+      setShown(true);
+      return;
+    }
+    observeReveal(el, () => setShown(true));
+    return () => unobserveReveal(el);
   }, []);
 
   return (
@@ -325,145 +364,190 @@ export function Reveal({
   );
 }
 
-/* ── BootScreen — a sprout grows in while the site "loads" ───────────
-   Shown once per browser session; any click or key skips it. ─────── */
+/* ── BootScreen — a sprout grows in while the site really loads ──────
+   Shown once per browser session; any click or key skips it. The exit is
+   gated on real readiness (fonts + the duck sprite, capped at 3s), the bar
+   is a composited translateX, and the hand-off is one 480ms cross-fade into
+   the site. On hand-off <html data-boot="done"> is set and a
+   "portfolio:booted" event fires, so the Welcome scene can time its
+   entrance to it (anything with .boot-gate waits for it automatically).
+   Returning visitors are hidden before first paint by layout.tsx. ───── */
+
+const BOOT_MIN_MS = 1100;
+const BOOT_MAX_MS = 3000;
+const BOOT_EXIT_MS = 480;
+
+function readBooted() {
+  try {
+    return sessionStorage.getItem("booted") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markBooted() {
+  try {
+    sessionStorage.setItem("booted", "1");
+  } catch {
+    /* storage blocked: the boot simply shows again next load */
+  }
+  document.documentElement.setAttribute("data-boot", "done");
+  window.dispatchEvent(new Event("portfolio:booted"));
+}
 
 export function BootScreen({ onDone }: { onDone: () => void }) {
-  const [show, setShow] = useState(true);
-  const [pct, setPct] = useState(0);
+  const [phase, setPhase] = useState<"on" | "leaving" | "gone">("on");
+  const fillRef = useRef<HTMLDivElement>(null);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
 
   useEffect(() => {
+    const html = document.documentElement;
+
     // Already booted this session? Skip straight in.
-    if (typeof window !== "undefined" && sessionStorage.getItem("booted") === "1") {
-      setShow(false);
-      onDone();
+    if (readBooted()) {
+      if (!html.hasAttribute("data-boot")) html.setAttribute("data-boot", "skip");
+      setPhase("gone");
+      onDoneRef.current();
       return;
     }
-    const bar = setInterval(() => setPct((p) => Math.min(100, p + Math.random() * 18 + 6)), 130);
-    const done = setTimeout(finish, 2200);
-    return () => {
-      clearInterval(bar);
-      clearTimeout(done);
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const minMs = reduced ? 400 : BOOT_MIN_MS;
+    const t0 = performance.now();
+    let last = t0;
+    let progress = 0;
+    let fullAt = 0;
+    let ready = false;
+    let finished = false;
+    let raf = 0;
+    let goneTimer = 0;
+
+    const sprite = new Image();
+    const spriteReady = new Promise<void>((resolve) => {
+      sprite.onload = sprite.onerror = () => resolve();
+      sprite.src = "/images/duck-pixel.png";
+    });
+    const fontsReady = document.fonts ? document.fonts.ready.then(() => undefined) : Promise.resolve();
+    Promise.all([fontsReady, spriteReady]).then(() => {
+      ready = true;
+    });
+
+    const detach = () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(cap);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("click", finish);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+      detach();
+      if (fillRef.current) fillRef.current.style.transform = "translateX(0)";
+      markBooted();
+      setPhase("leaving");
+      onDoneRef.current();
+      goneTimer = window.setTimeout(() => setPhase("gone"), (reduced ? 200 : BOOT_EXIT_MS) + 40);
+    }
+
+    // The key that skips the boot shouldn't also fire a site shortcut.
+    function onKey(e: KeyboardEvent) {
+      e.stopPropagation();
+      finish();
+    }
+
+    // Time-based easing toward a target: crawls to 90% over the minimum
+    // time, then glides to full once the real assets are in.
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      const canFinish = ready && now - t0 >= minMs;
+      const target = canFinish ? 1 : Math.min(0.9, ((now - t0) / minMs) * 0.9);
+      progress += (target - progress) * (1 - Math.exp(-dt / (canFinish ? 70 : 140)));
+      if (fillRef.current) fillRef.current.style.transform = `translateX(${((progress - 1) * 100).toFixed(3)}%)`;
+      if (canFinish && progress > 0.995) {
+        fullAt ||= now;
+        // a short beat at 100% so the eye registers "done"
+        if (now - fullAt > 120) return finish();
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    // A font or image that never settles can never trap the visitor.
+    const cap = window.setTimeout(finish, BOOT_MAX_MS);
+    raf = requestAnimationFrame(tick);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("click", finish);
+
+    return () => {
+      detach();
+      window.clearTimeout(goneTimer);
+    };
   }, []);
 
-  function finish() {
-    if (typeof window !== "undefined") sessionStorage.setItem("booted", "1");
-    setShow(false);
-    onDone();
-  }
-
-  // Any key or click skips the boot.
-  useEffect(() => {
-    if (!show) return;
-    const skip = () => finish();
-    window.addEventListener("keydown", skip);
-    window.addEventListener("click", skip);
-    return () => {
-      window.removeEventListener("keydown", skip);
-      window.removeEventListener("click", skip);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show]);
-
-  if (!show) return null;
+  if (phase === "gone") return null;
+  const leaving = phase === "leaving";
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 100,
-        background:
-          "radial-gradient(900px 600px at 50% -10%, rgba(234,170,34,0.2), transparent 60%), " +
-          "linear-gradient(180deg, #121313 0%, #080909 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "20px",
-        fontFamily: FONT,
-        cursor: "pointer",
-      }}
+      className={"boot" + (leaving ? " is-leaving" : "")}
+      role="status"
+      aria-live="polite"
+      aria-busy={!leaving}
+      aria-hidden={leaving || undefined}
+      style={{ fontFamily: FONT }}
     >
-      {/* glowing sun + growing sprout */}
-      <div
-        style={{
-          position: "relative",
-          width: "120px",
-          height: "96px",
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "center",
-        }}
-      >
+      <div className="boot-mark">
+        {/* glowing sun + growing sprout */}
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, #FFD447, #EAAA22)",
-            boxShadow: "0 0 38px rgba(234,170,34,0.5)",
+            position: "relative",
+            width: "120px",
+            height: "96px",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
           }}
-          className="sun-pulse"
-        />
-        <div style={{ transformOrigin: "bottom center", animation: "grow 1.1s cubic-bezier(0.34,1.56,0.64,1) forwards" }}>
-          <Sprout size={64} />
+        >
+          <div className="boot-sun-wrap">
+            <div className="boot-sun sun-pulse" />
+          </div>
+          <div className="boot-sprout">
+            <Sprout size={64} />
+          </div>
         </div>
-      </div>
 
-      <div className="serif" style={{ fontSize: "26px", fontWeight: 600, color: C.cream, letterSpacing: "0.04em" }}>
-        Portfolio
-      </div>
-      <div
-        style={{
-          fontSize: "11px",
-          fontWeight: 600,
-          color: C.sun,
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-        }}
-      >
-        Summer Pandey — growing…
-      </div>
-
-      {/* progress bar */}
-      <div
-        style={{
-          width: "240px",
-          height: "8px",
-          borderRadius: "999px",
-          background: "rgba(255,255,255,0.12)",
-          overflow: "hidden",
-          marginTop: "4px",
-        }}
-      >
         <div
+          className="serif boot-line"
+          style={{ fontSize: "26px", fontWeight: 600, color: C.cream, letterSpacing: "0.04em", ["--i" as string]: 1 }}
+        >
+          Portfolio
+        </div>
+        <div
+          className="boot-line"
           style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: `linear-gradient(90deg, ${C.leaf}, ${C.sun})`,
-            borderRadius: "999px",
-            transition: "width 0.13s linear",
+            fontSize: "11px",
+            fontWeight: 600,
+            color: C.sun,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            ["--i" as string]: 2,
           }}
-        />
-      </div>
+        >
+          Summer Pandey — growing…
+        </div>
 
-      <div
-        style={{
-          fontSize: "10px",
-          color: "rgba(255,249,232,0.5)",
-          letterSpacing: "0.14em",
-          marginTop: "6px",
-          textTransform: "uppercase",
-        }}
-      >
-        click or press any key to enter
+        {/* progress bar — a composited translateX, never a width animation */}
+        <div className="boot-track boot-line" aria-hidden style={{ ["--i" as string]: 3 }}>
+          <div ref={fillRef} className="boot-fill" />
+        </div>
+
+        <div className="boot-hint boot-line" style={{ ["--i" as string]: 4 }}>
+          click or press any key to enter
+        </div>
       </div>
     </div>
   );
@@ -502,7 +586,10 @@ export function useKonami(onUnlock: () => void) {
   }, [onUnlock]);
 }
 
-/* ── Confetti — a flurry of falling embers to celebrate ─────────────── */
+/* ── Confetti — a flurry of falling embers to celebrate ───────────────
+   Each time `active` turns on, one burst runs to its own natural end
+   (the slowest ember lands at ~5s), even if `active` flips off sooner —
+   so no ember ever vanishes mid-air. Reduced motion skips the flurry. ── */
 
 type Ember = {
   left: number;
@@ -514,12 +601,15 @@ type Ember = {
 };
 
 const EMBER_COLORS = ["#FFD447", "#EAAA22", "#B9942F", "#FFF9E8"];
+const EMBER_MAX_DELAY = 0.8;
+const EMBER_MAX_FALL = 4.2;
+const BURST_MS = (EMBER_MAX_DELAY + EMBER_MAX_FALL) * 1000 + 100;
 
 function makeEmbers(): Ember[] {
   return Array.from({ length: 46 }, () => ({
     left: Math.random() * 100,
-    delay: Math.random() * 0.8,
-    duration: 2.4 + Math.random() * 1.8,
+    delay: Math.random() * EMBER_MAX_DELAY,
+    duration: 2.4 + Math.random() * (EMBER_MAX_FALL - 2.4),
     size: 10 + Math.random() * 10,
     glyph: ["✦", "✧", "⋆", "·"][Math.floor(Math.random() * 4)],
     color: EMBER_COLORS[Math.floor(Math.random() * EMBER_COLORS.length)],
@@ -527,28 +617,36 @@ function makeEmbers(): Ember[] {
 }
 
 export function Confetti({ active }: { active: boolean }) {
-  const [embers, setEmbers] = useState<Ember[]>([]);
+  const reduced = usePrefersReducedMotion();
+  const [embers, setEmbers] = useState<Ember[] | null>(null);
 
   // A fresh random flurry every time the confetti turns on.
   useEffect(() => {
-    if (active) setEmbers(makeEmbers());
-  }, [active]);
+    if (!active || reduced) return;
+    setEmbers(makeEmbers());
+  }, [active, reduced]);
 
-  if (!active) return null;
+  // The burst unmounts itself once its last ember has landed.
+  useEffect(() => {
+    if (!embers) return;
+    const done = window.setTimeout(() => setEmbers(null), BURST_MS);
+    return () => window.clearTimeout(done);
+  }, [embers]);
+
+  if (!embers) return null;
 
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 95, overflow: "hidden" }}>
+    <div aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 95, overflow: "hidden" }}>
       {embers.map((ember, i) => (
         <span
           key={i}
+          className="ember"
           style={{
-            position: "absolute",
-            top: 0,
             left: `${ember.left}%`,
             fontSize: `${ember.size}px`,
             color: ember.color,
             textShadow: `0 0 8px ${ember.color}`,
-            animation: `leaf-fall ${ember.duration}s linear ${ember.delay}s forwards`,
+            animation: `leaf-fall ${ember.duration}s linear ${ember.delay}s both`,
           }}
         >
           {ember.glyph}
@@ -558,37 +656,62 @@ export function Confetti({ active }: { active: boolean }) {
   );
 }
 
-/* ── Toast — an "achievement unlocked" pill at the bottom ──────────── */
+/* ── Toast — an "achievement unlocked" pill at the bottom ─────────────
+   Springs in (it's part of the delight layer), and when `text` clears it
+   plays a short exit before unmounting. The live region stays mounted so
+   screen readers reliably announce the unlock. ──────────────────────── */
+
+const TOAST_EXIT_MS = 220;
 
 export function Toast({ text }: { text: string | null }) {
-  if (!text) return null;
+  const [shownText, setShownText] = useState<string | null>(text);
+  const [leaving, setLeaving] = useState(false);
+
+  // New text (or the same text returning mid-exit): show it right away.
+  if (text && (text !== shownText || leaving)) {
+    setShownText(text);
+    setLeaving(false);
+  }
+
+  // Text cleared: play the exit, then unmount.
+  useEffect(() => {
+    if (text || !shownText) return;
+    setLeaving(true);
+    const gone = window.setTimeout(() => {
+      setShownText(null);
+      setLeaving(false);
+    }, TOAST_EXIT_MS);
+    return () => window.clearTimeout(gone);
+  }, [text, shownText]);
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: "28px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 96,
-        background: C.panel,
-        border: `1px solid ${C.leaf}`,
-        borderRadius: "999px",
-        padding: "12px 20px",
-        fontFamily: FONT,
-        fontWeight: 600,
-        fontSize: "12px",
-        color: C.cream,
-        letterSpacing: "0.08em",
-        boxShadow: "0 12px 34px rgba(0,0,0,0.5)",
-        animation: "toast-in 0.3s ease",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span style={{ color: C.sun }}>✦</span>
-      {text}
+    <div role="status" aria-live="polite" className="unlock-region">
+      {shownText && (
+        <div
+          className={"unlock-pill" + (leaving ? " is-leaving" : "")}
+          style={{
+            background: C.panel,
+            border: `1px solid ${C.leaf}`,
+            borderRadius: "999px",
+            padding: "12px 20px",
+            fontFamily: FONT,
+            fontWeight: 600,
+            fontSize: "12px",
+            color: C.cream,
+            letterSpacing: "0.08em",
+            boxShadow: "0 12px 34px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,212,71,0.06)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span className="unlock-spark" aria-hidden style={{ color: C.sun }}>
+            ✦
+          </span>
+          {shownText}
+        </div>
+      )}
     </div>
   );
 }

@@ -453,7 +453,7 @@ function QuackBubble({
           border: "2px solid #080909",
           borderRadius: 0,
           padding: "4px 9px 5px",
-          fontFamily: "'Quicksand', sans-serif",
+          fontFamily: "var(--font-quicksand), 'Quicksand', sans-serif",
           fontSize: 11,
           fontWeight: 700,
           lineHeight: 1.2,

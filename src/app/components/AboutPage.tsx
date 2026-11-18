@@ -1,15 +1,40 @@
-import { Linkedin, Github, FileText, ArrowUpRight, Trophy } from "lucide-react";
-import { C, FONT, SERIF, DARK_GRAD, DOT_GRID, EYEBROW, type Panel } from "./theme";
-import { Typewriter, Reveal, Sprout } from "./fx";
+import { useEffect, useRef, useState } from "react";
+import { Linkedin, Github, FileText, ArrowUpRight, Trophy, Copy, Check } from "lucide-react";
+import {
+  C,
+  FONT,
+  SERIF,
+  DARK_GRAD,
+  DOT_GRID,
+  EYEBROW,
+  EMAIL,
+  MAILTO,
+  RESUME_PDF,
+  LINKEDIN,
+  GITHUB,
+  type Panel,
+} from "./theme";
+import { Typewriter, Sprout } from "./fx";
+import "../styles/about.css";
 
 /* ────────────────────────────────────────────────────────────────────
    AboutPage — a dense bento grid that fits on one screen:
    hero, roles & motto, three showcases, achievements, skills,
    contact, and a footer bar.
+
+   Layout and motion live in styles/about.css. Every card is a
+   [data-rv] block; when the panel slides in, the cards light up in one
+   top-down wave, and cards further down join as they scroll into view.
    ──────────────────────────────────────────────────────────────────── */
 
-const GAP = "10px"; // gutter between bento boxes
-const RADIUS = "18px";
+/** Delay between cards in the entrance wave, and the cap on it, so a
+    long batch never leaves the last card waiting. */
+const WAVE_STEP = 55;
+const WAVE_MAX = 8;
+/** The headline starts typing once the hero card has begun to land. */
+const TYPE_LEAD = 380;
+
+const HEADLINE = "Building reliable\nAI for the\nreal world";
 
 /* ── tiny building blocks ──────────────────────────────────────────── */
 
@@ -20,49 +45,67 @@ function Label({ children, dark }: { children: React.ReactNode; dark?: boolean }
   );
 }
 
-/** One bento box. `dark` flips to the golden-dusk gradient, `arrow`
-    adds a corner arrow, `flat` turns off hover entirely. Only boxes you
-    can click lift on hover; the rest just warm their border. */
+/** One bento box. `dark` flips to the golden-dusk gradient. `rv` makes
+    it part of the entrance wave (pass "hero" for the hero's variant). */
 function Box({
   dark,
   children,
   style,
-  onClick,
-  arrow,
-  flat,
+  className,
+  rv,
 }: {
   dark?: boolean;
   children: React.ReactNode;
   style?: React.CSSProperties;
-  onClick?: () => void;
-  arrow?: boolean;
-  flat?: boolean;
+  className?: string;
+  rv?: boolean | "hero";
 }) {
   return (
     <div
-      onClick={onClick}
-      className={flat ? undefined : onClick ? "pbox pbox-link" : "pbox"}
+      data-rv={rv === "hero" ? "hero" : rv ? "" : undefined}
+      className={["ab-box", dark && "ab-box--dark", className].filter(Boolean).join(" ")}
       style={{
-        position: "relative",
         background: dark ? DARK_GRAD : C.panel,
         border: `1px solid ${dark ? "rgba(234,170,34,0.16)" : C.border}`,
-        borderRadius: RADIUS,
-        padding: "16px 18px",
-        cursor: onClick ? "pointer" : "default",
-        overflow: "hidden",
-        boxShadow: dark ? "none" : "0 2px 10px rgba(0,0,0,0.35)",
         ...style,
       }}
     >
       {children}
-      {arrow && (
-        <div className="pbox-arrow" style={{ position: "absolute", top: "14px", right: "14px" }}>
-          <ArrowUpRight size={15} color={C.sun} strokeWidth={2} opacity={0.85} />
-        </div>
-      )}
     </div>
   );
 }
+
+/** A showcase tile that opens Works. The whole tile is one real button
+    laid over the content, so it works by keyboard, touch, and screen
+    reader, and nothing interactive is nested inside anything else. */
+function Door({
+  label,
+  onOpen,
+  dark,
+  className,
+  children,
+}: {
+  label: string;
+  onOpen: () => void;
+  dark?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div data-rv="" className={["ab-door", className].filter(Boolean).join(" ")}>
+      <Box dark={dark} style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "12px" }}>
+        {children}
+        <span className="ab-arrow" aria-hidden="true">
+          <ArrowUpRight size={15} color={C.sun} strokeWidth={2} opacity={0.85} />
+        </span>
+      </Box>
+      <button type="button" className="ab-door-hit" aria-label={label} onClick={onOpen} />
+    </div>
+  );
+}
+
+/** Per-element index for staggered CSS delays. */
+const idx = (i: number) => ({ "--i": i }) as React.CSSProperties;
 
 /* ── content ───────────────────────────────────────────────────────── */
 
@@ -80,40 +123,176 @@ const SKILLS = [
 ];
 
 // Gamified résumé metrics (the trophy badge is rendered separately).
+// The figure and its label are split only so the figure can be set in
+// the display serif; the facts are unchanged.
 const WINS = [
-  "1,000+ calls automated/week",
-  "+25% call completion",
-  "15% fewer service failures",
-  "200+ students mentored",
-  "50+ students taught",
+  { value: "1,000+", label: "calls automated/week" },
+  { value: "+25%", label: "call completion" },
+  { value: "15%", label: "fewer service failures" },
+  { value: "200+", label: "students mentored" },
+  { value: "50+", label: "students taught" },
 ];
 
+/** Shown as a status pill in the hero — edit when plans change. */
+const AVAILABILITY = "Graduating May 2027 · open to SWE & AI/ML roles";
+
 const SOCIALS = [
-  { Icon: Linkedin, href: "https://www.linkedin.com/in/summerpandey/", label: "LinkedIn" },
-  { Icon: Github, href: "https://github.com/SummerPandey", label: "GitHub" },
-  { Icon: FileText, href: "/Summer_Pandey_Resume.pdf", label: "Resume" },
+  { Icon: Linkedin, href: LINKEDIN, label: "LinkedIn" },
+  { Icon: Github, href: GITHUB, label: "GitHub" },
+  { Icon: FileText, href: RESUME_PDF, label: "Résumé (PDF)" },
 ];
+
+/* ── behaviour ─────────────────────────────────────────────────────── */
+
+/** Copies text to the clipboard, falling back to a hidden textarea
+    where the async Clipboard API is unavailable (non-secure origins). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** The entrance wave. Cards are queued while they intersect, but held
+    until the panel has mostly slid in (the sentinel strip is >55%
+    visible), then released together in document order, so the wave
+    always runs top-down instead of following the slide direction.
+    After that, cards reveal as they scroll into view. Classes are set
+    directly on the DOM, so revealing never re-renders the page. */
+function useEntranceWave(
+  rootRef: React.RefObject<HTMLDivElement | null>,
+  sentinelRef: React.RefObject<HTMLDivElement | null>,
+  onHero: (delay: number) => void
+) {
+  const onHeroRef = useRef(onHero);
+  useEffect(() => {
+    onHeroRef.current = onHero;
+  });
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel) return;
+    const cards = Array.from(root.querySelectorAll<HTMLElement>("[data-rv]"));
+
+    const show = (els: HTMLElement[]) => {
+      els.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+      els.forEach((el, i) => {
+        const delay = Math.min(i, WAVE_MAX) * WAVE_STEP;
+        el.style.setProperty("--rv-d", `${delay}ms`);
+        el.classList.add("is-in");
+        if (el.dataset.rv === "hero") onHeroRef.current(delay);
+      });
+    };
+
+    if (typeof IntersectionObserver === "undefined") {
+      show(cards);
+      return;
+    }
+
+    let arrived = false;
+    const pending = new Set<HTMLElement>();
+    const flush = () => {
+      const els = [...pending];
+      pending.clear();
+      els.forEach((el) => cardIO.unobserve(el));
+      if (els.length) show(els);
+    };
+
+    const cardIO = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement;
+          if (entry.isIntersecting) pending.add(el);
+          else pending.delete(el);
+        }
+        if (arrived) flush();
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+    const gateIO = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio >= 0.55) {
+          arrived = true;
+          gateIO.disconnect();
+          flush();
+        }
+      },
+      { threshold: [0, 0.55, 1] }
+    );
+
+    cards.forEach((el) => cardIO.observe(el));
+    gateIO.observe(sentinel);
+    return () => {
+      cardIO.disconnect();
+      gateIO.disconnect();
+    };
+  }, [rootRef, sentinelRef]);
+}
 
 /* ── the page ──────────────────────────────────────────────────────── */
 
 export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // The headline's typewriter mounts once the hero card has landed.
+  const [typing, setTyping] = useState(false);
+  const typeTimer = useRef<number | undefined>(undefined);
+  useEntranceWave(rootRef, sentinelRef, (delay) => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.clearTimeout(typeTimer.current);
+    typeTimer.current = window.setTimeout(() => setTyping(true), reduce ? 0 : delay + TYPE_LEAD);
+  });
+
+  // "Copy email" confirmation.
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<number | undefined>(undefined);
+  useEffect(
+    () => () => {
+      window.clearTimeout(copiedTimer.current);
+      window.clearTimeout(typeTimer.current);
+    },
+    []
+  );
+  const copyEmail = async () => {
+    if (!(await copyText(EMAIL))) return; // the mailto pill beside it still works
+    setCopied(true);
+    window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const openWorks = () => goTo("works");
+
   return (
-    <div style={{ minHeight: "100vh", fontFamily: FONT, color: C.dark, ...DOT_GRID }}>
-      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "70px clamp(16px, 3vw, 36px) 24px" }}>
-        {/* ── row 1: hero (left) + roles & motto (right) ── */}
-        <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: GAP, marginBottom: GAP }}>
+    <div ref={rootRef} className="ab" style={{ minHeight: "100vh", fontFamily: FONT, color: C.dark, ...DOT_GRID }}>
+      <div ref={sentinelRef} className="ab-sentinel" aria-hidden="true" />
+      <div className="ab-wrap">
+        <div className="ab-grid">
+          {/* ── row 1: hero (left) + roles & motto (right) ── */}
           <Box
             dark
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              minHeight: "216px",
-              padding: "20px 26px",
-            }}
+            rv="hero"
+            className="ab-hero ab-6"
+            style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "216px" }}
           >
             {/* sun-glow + swaying sprout, plus a headshot avatar */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div className="ab-stage" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", ...idx(0) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div className="sun-dot" style={{ width: "30px", height: "30px" }} />
                 <span className="sway" style={{ display: "inline-flex" }}>
@@ -126,6 +305,8 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 alt="Summer Pandey"
                 width={52}
                 height={52}
+                loading="lazy"
+                decoding="async"
                 style={{
                   width: "52px",
                   height: "52px",
@@ -138,10 +319,16 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             </div>
 
             <div>
-              <div style={{ ...EYEBROW, color: "rgba(255,249,232,0.55)" }}>Summer Pandey · Software Engineer</div>
+              <div className="ab-stage" style={{ ...EYEBROW, color: "rgba(255,249,232,0.55)", ...idx(1) }}>
+                Summer Pandey · Software Engineer
+              </div>
+              <div className="ab-status ab-stage" style={idx(2)}>
+                <span className="ab-status-dot" aria-hidden="true" />
+                {AVAILABILITY}
+              </div>
               {/* sized for all three final lines up front, so the card doesn't grow as it types */}
               <h2
-                className="serif"
+                className="serif ab-stage"
                 style={{
                   fontFamily: SERIF,
                   fontWeight: 600,
@@ -150,17 +337,31 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   lineHeight: 1.12,
                   letterSpacing: "-0.01em",
                   minHeight: "calc(3 * 1.12em)",
-                  margin: "10px 0 0",
+                  margin: "8px 0 0",
+                  ...idx(3),
                 }}
               >
-                <Typewriter text={"Building reliable\nAI for the\nreal world"} style={{ color: C.cream }} />
+                {typing ? (
+                  <Typewriter text={HEADLINE} style={{ color: C.cream }} />
+                ) : (
+                  <>
+                    <span className="ab-sr">{HEADLINE.replace(/\n/g, " ")}</span>
+                    <span aria-hidden="true" className="cursor" style={{ color: C.sun }}>
+                      ▮
+                    </span>
+                  </>
+                )}
               </h2>
-              <div style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.02em" }}>
+              <div
+                className="ab-stage"
+                style={{ marginTop: "10px", fontSize: "14px", fontWeight: 600, color: C.sun, letterSpacing: "0.02em", ...idx(4) }}
+              >
                 From edge computer vision to production voice systems.
               </div>
               <button
-                className="btn-quiet btn-gold"
-                onClick={() => goTo("works")}
+                type="button"
+                className="btn-quiet btn-gold ab-stage"
+                onClick={openWorks}
                 style={{
                   marginTop: "16px",
                   display: "inline-flex",
@@ -174,6 +375,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   fontWeight: 700,
                   fontSize: "13px",
                   letterSpacing: "0.01em",
+                  ...idx(5),
                 }}
               >
                 Explore my work <ArrowUpRight size={15} color="#080909" strokeWidth={2.5} />
@@ -181,109 +383,69 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
             </div>
           </Box>
 
-          <div style={{ display: "grid", gridTemplateRows: "auto 1fr", gap: GAP }}>
-            <Box>
+          <div className="ab-stack ab-4">
+            <Box rv>
               <Label>Roles</Label>
-              <div style={{ marginTop: "12px" }}>
-                {ROLES.map((role, i) => (
-                  <div
-                    key={role}
-                    style={{
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      color: i === 1 ? C.leaf : C.moss,
-                      letterSpacing: "0.01em",
-                      lineHeight: 1.65,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span style={{ color: C.sun }}>✦</span> {role}
-                  </div>
+              <ul className="ab-list">
+                {ROLES.map((role) => (
+                  <li key={role} className="ab-role">
+                    <span className="ab-star" aria-hidden="true">
+                      ✦
+                    </span>
+                    {role}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Box>
 
-            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Box rv style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <Label>My motto</Label>
-              <div style={{ marginTop: "12px" }}>
+              <ul className="ab-list">
                 {MOTTOS.map((line) => (
-                  <div key={line} style={{ fontSize: "13px", fontWeight: 500, color: C.moss, lineHeight: 1.65 }}>
-                    <span style={{ color: C.leaf }}>✦ </span>
+                  <li key={line} className="ab-motto-line">
+                    <span className="ab-star" aria-hidden="true">
+                      ✦
+                    </span>
                     {line}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Box>
           </div>
-        </div>
 
-        {/* ── about text ── */}
-        <Reveal style={{ marginBottom: GAP }}>
-          <Box style={{ padding: "16px 20px" }}>
-            <p style={{ fontSize: "14px", fontWeight: 500, lineHeight: 1.65, color: C.moss, margin: 0, maxWidth: "68ch" }}>
-              I&apos;m Summer Pandey, a Computer Science and Data Science student at Augustana College. I build
-              human-centered AI products across edge computer vision, voice automation, and personal health. I care
-              about privacy, reliability, and turning complex technology into tools people can actually use.
+          {/* ── about text ── */}
+          <Box rv>
+            <p className="ab-bio">
+              I&apos;m Summer Pandey, a Computer Science and Data Science student at Augustana College. I build{" "}
+              <strong>human-centered AI products</strong> across edge computer vision, voice automation, and personal
+              health. I care about <strong>privacy, reliability</strong>, and turning complex technology into{" "}
+              <strong>tools people can actually use</strong>.
             </p>
           </Box>
-        </Reveal>
 
-        {/* ── row 2: three showcases, all leading to Works ── */}
-        <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: GAP, marginBottom: GAP }}>
-          <Box
-            dark
-            onClick={() => goTo("works")}
-            arrow
-            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-          >
+          {/* ── row 2: three showcases, all leading to Works ── */}
+          <Door dark label="Tech works: open the Works panel" onOpen={openWorks} className="ab-4 ab-lead">
             <Label dark>Tech works</Label>
             <div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "9px" }}>
                 {["Argus", "VentureGain"].map((name) => (
-                  <button
-                    key={name}
-                    className="chip"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      goTo("works");
-                    }}
-                    style={{
-                      flex: 1,
-                      height: "38px",
-                      borderRadius: "12px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      background: "rgba(255,255,255,0.06)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      fontFamily: FONT,
-                    }}
-                  >
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: C.leaf, letterSpacing: "0.01em" }}>
-                      {name}
-                    </span>
-                  </button>
+                  <span key={name} className="ab-chip">
+                    {name}
+                  </span>
                 ))}
               </div>
               <div style={{ fontSize: "13px", fontWeight: 600, color: C.cream, letterSpacing: "0.01em", lineHeight: 1.45 }}>
                 Privacy-first AI, edge vision, and full-stack products.
               </div>
             </div>
-          </Box>
+          </Door>
 
-          <Box
-            onClick={() => goTo("works")}
-            arrow
-            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-          >
+          <Door label="Experience: open the Works panel" onOpen={openWorks} className="ab-3">
             <Label>Experience</Label>
             <div
               style={{
                 flex: 1,
-                margin: "10px 0",
+                margin: 0,
                 borderRadius: "12px",
                 background: "linear-gradient(160deg, #2b2410, #121313)",
                 minHeight: "40px",
@@ -302,18 +464,14 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
               </div>
             </div>
             <div style={{ fontSize: "14px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>2 roles</div>
-          </Box>
+          </Door>
 
-          <Box
-            onClick={() => goTo("works")}
-            arrow
-            style={{ minHeight: "98px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-          >
+          <Door label="Projects: open the Works panel" onOpen={openWorks} className="ab-3">
             <Label>Projects</Label>
             <div
               style={{
                 flex: 1,
-                margin: "10px 0",
+                margin: 0,
                 borderRadius: "12px",
                 background: "linear-gradient(135deg, #3a3214, #151512)",
                 minHeight: "40px",
@@ -329,20 +487,20 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                 Argus · VentureGain · Preventia
               </span>
             </div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>3 products across edge AI, health, and data</div>
-          </Box>
-        </div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: C.dark, letterSpacing: "0.01em" }}>
+              3 products across edge AI, health, and data
+            </div>
+          </Door>
 
-        {/* ── achievements: trophy badge + metric pills ── */}
-        <Reveal style={{ marginBottom: GAP }}>
-          <Box style={{ padding: "12px 16px" }}>
+          {/* ── achievements: trophy badge + metric pills ── */}
+          <Box rv style={{ paddingTop: "13px", paddingBottom: "14px" }}>
             <Label>Achievements · unlocked</Label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "7px", marginTop: "9px" }}>
+            <div className="ab-ach-row">
               <a
                 href="https://devpost.com/software/preventia-sblncy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="badge btn-gold"
+                className="badge btn-gold ab-trophy"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -354,14 +512,15 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                   color: "#080909",
                   letterSpacing: "0.02em",
                   textDecoration: "none",
+                  ...idx(0),
                 }}
               >
                 <Trophy size={13} color="#080909" strokeWidth={2.2} />
                 Best Use of Gemini AI · HackAugie
               </a>
-              {WINS.map((win) => (
+              {WINS.map((win, i) => (
                 <span
-                  key={win}
+                  key={win.label}
                   className="badge"
                   style={{
                     display: "inline-flex",
@@ -370,74 +529,87 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                     border: `1px solid ${C.border}`,
                     background: C.panel,
                     borderRadius: "999px",
-                    padding: "8px 13px",
+                    padding: "7px 13px",
                     fontSize: "12px",
                     fontWeight: 500,
                     color: C.moss,
                     letterSpacing: "0.01em",
+                    ...idx(i + 1),
                   }}
                 >
-                  <span className="spark" style={{ color: C.leaf }}>
+                  <span className="spark" style={{ color: C.leaf }} aria-hidden="true">
                     ✦
                   </span>
-                  <span>
-                    <b style={{ color: C.cream, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{win.split(" ")[0]}</b>{" "}
-                    {win.split(" ").slice(1).join(" ")}
-                  </span>
+                  <span className="ab-num">{win.value}</span>
+                  <span>{win.label}</span>
                 </span>
               ))}
             </div>
           </Box>
-        </Reveal>
 
-        {/* ── row 3: skill chips (left) + contact (right) ── */}
-        <Reveal style={{ marginBottom: GAP }}>
-          <div className="bento-row" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: GAP }}>
-            <Box style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <Label>In the stack</Label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
-                {SKILLS.map((skill) => (
-                  <span
-                    key={skill}
-                    className="badge chip"
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: C.bark,
-                      border: `1px solid ${C.border}`,
-                      background: "rgba(234,170,34,0.12)",
-                      borderRadius: "999px",
-                      padding: "6px 13px",
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </Box>
+          {/* ── row 3: skill chips (left) + contact (right) ── */}
+          <Box rv className="ab-6 ab-skills" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Label>In the stack</Label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
+              {SKILLS.map((skill) => (
+                <span
+                  key={skill}
+                  className="badge"
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: C.bark,
+                    border: `1px solid ${C.border}`,
+                    background: "rgba(234,170,34,0.12)",
+                    borderRadius: "999px",
+                    padding: "6px 13px",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </Box>
 
-            <Box dark style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ fontSize: "15px", fontWeight: 700, color: C.cream, lineHeight: 1.6, letterSpacing: "0.01em" }}>
-                Have a problem worth building for?
-              </div>
-              <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 500, color: C.moss, lineHeight: 1.55 }}>
-                I&apos;m open to software engineering, AI/ML, and product-focused opportunities.
-              </div>
-              <a
-                href="mailto:summerpandey23@augustana.edu"
-                className="link-glow"
-                style={{ marginTop: "10px", fontSize: "12px", fontWeight: 600, color: C.sun, opacity: 0.95, textDecoration: "none" }}
-              >
-                summerpandey23@augustana.edu
+          <Box dark rv className="ab-4 ab-contact" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ fontSize: "15px", fontWeight: 700, color: C.cream, lineHeight: 1.5, letterSpacing: "0.01em" }}>
+              Have a problem worth building for?
+            </div>
+            <div style={{ marginTop: "6px", fontSize: "12px", fontWeight: 500, color: C.moss, lineHeight: 1.55 }}>
+              I&apos;m open to software engineering, AI/ML, and product-focused roles. Email is fastest.
+            </div>
+            <div className="ab-contact-row">
+              <a href={MAILTO} className="ab-pill ab-mail">
+                {EMAIL}
               </a>
-            </Box>
-          </div>
-        </Reveal>
+              <button
+                type="button"
+                className="ab-pill ab-copy"
+                data-copied={copied}
+                onClick={copyEmail}
+                aria-label="Copy email address"
+              >
+                <span className="ab-swap" aria-hidden="true">
+                  <span className="ab-swap-idle">
+                    <Copy size={13} strokeWidth={2.2} /> Copy
+                  </span>
+                  <span className="ab-swap-done">
+                    <Check size={13} strokeWidth={2.6} /> Copied
+                  </span>
+                </span>
+              </button>
+              <a href={RESUME_PDF} target="_blank" rel="noopener noreferrer" className="ab-pill ab-copy ab-resume">
+                <FileText size={13} strokeWidth={2.2} aria-hidden="true" /> Résumé
+              </a>
+              <span role="status" className="ab-sr">
+                {copied ? "Email address copied" : ""}
+              </span>
+            </div>
+          </Box>
 
-        {/* ── footer: sign-off + social links ── */}
-        <Reveal>
-          <Box dark flat style={{ padding: "16px 26px" }}>
+          {/* ── footer: sign-off + social links ── */}
+          <Box dark rv style={{ paddingTop: "16px", paddingBottom: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
               <div
                 className="serif"
@@ -462,6 +634,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
+                    title={label}
                     className="icon-btn"
                     style={{
                       width: "36px",
@@ -480,7 +653,7 @@ export function AboutPage({ goTo }: { goTo: (p: Panel) => void }) {
               </div>
             </div>
           </Box>
-        </Reveal>
+        </div>
       </div>
     </div>
   );

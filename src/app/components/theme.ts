@@ -32,10 +32,10 @@ export const C = {
 } as const;
 
 /** Body font: a rounded, friendly sans. */
-export const FONT = "'Quicksand', ui-sans-serif, system-ui, sans-serif";
+export const FONT = "var(--font-quicksand), 'Quicksand', ui-sans-serif, system-ui, sans-serif";
 
 /** Display font: an organic serif for headings. */
-export const SERIF = "'Fraunces', Georgia, serif";
+export const SERIF = "var(--font-fraunces), 'Fraunces', Georgia, serif";
 
 /** Feature-card backdrop — a restrained golden glow fading into black. */
 export const DARK_GRAD =
@@ -61,3 +61,10 @@ export const EYEBROW: CSSProperties = {
   textTransform: "uppercase",
   color: C.muted,
 };
+
+/* ── Contact — one source for every email, résumé, and profile link ── */
+export const EMAIL = "summerpandey23@augustana.edu";
+export const RESUME_PDF = "/Summer_Pandey_Resume.pdf";
+export const LINKEDIN = "https://www.linkedin.com/in/summerpandey/";
+export const GITHUB = "https://github.com/SummerPandey";
+export const MAILTO = `mailto:${EMAIL}?subject=${encodeURIComponent("Hello from your portfolio")}`;
