@@ -1355,32 +1355,6 @@ export function Portfolio() {
           >
             <QrCode size={16} />
           </button>
-          {qrOpen && (
-            <div
-              role="dialog"
-              aria-label="Site QR code"
-              style={{
-                position: "absolute",
-                top: "calc(100% + 10px)",
-                left: 0,
-                background: C.panel,
-                border: `1px solid ${C.border}`,
-                borderRadius: "12px",
-                padding: "14px",
-                boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/site-qr.png" alt="QR code linking to summerpandey.com" width={120} height={120} style={{ borderRadius: "6px" }} />
-              <span style={{ fontFamily: FONT, fontSize: "11px", color: C.muted, letterSpacing: "0.04em" }}>
-                summerpandey.com
-              </span>
-            </div>
-          )}
         </div>
         <button
           onClick={() => goTo("welcome")}
@@ -1488,6 +1462,63 @@ export function Portfolio() {
           )}
         </div>
       </nav>
+
+      {qrOpen && (
+        <div
+          role="dialog"
+          aria-label="Site QR code"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            background: "rgba(8,9,9,0.96)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "24px",
+          }}
+        >
+          <button
+            onClick={() => setQrOpen(false)}
+            aria-label="Close"
+            style={{
+              position: "absolute",
+              top: "24px",
+              right: "24px",
+              color: C.muted,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: FONT,
+              fontSize: "28px",
+              lineHeight: 1,
+              padding: "8px",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+          >
+            ×
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/site-qr.png"
+            alt="QR code linking to summerpandey.com"
+            style={{
+              width: "min(70vw, 420px)",
+              height: "min(70vw, 420px)",
+              borderRadius: "16px",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.55)",
+            }}
+          />
+          <span style={{ fontFamily: FONT, fontSize: "16px", fontWeight: 600, color: C.dark, letterSpacing: "0.04em" }}>
+            summerpandey.com
+          </span>
+        </div>
+      )}
 
       {/* ── the horizontal panel track ── */}
       <div
