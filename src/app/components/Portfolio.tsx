@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
-import { Linkedin, Github, Mail } from "lucide-react";
+import { Linkedin, Github, Mail, QrCode } from "lucide-react";
 import { C, FONT, SERIF, RESUME_PDF, LINKEDIN, GITHUB, MAILTO, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
@@ -1112,6 +1112,7 @@ export function Portfolio() {
   const [duckChatOpen, setDuckChatOpen] = useState(false);
   const openDuckChat = useCallback(() => setDuckChatOpen(true), []);
   const closeDuckChat = useCallback(() => setDuckChatOpen(false), []);
+  const [qrOpen, setQrOpen] = useState(false);
 
   /* Panel changes are silent to assistive tech otherwise: announce each
      one (but not the initial panel) through a polite live region. */
@@ -1222,6 +1223,25 @@ export function Portfolio() {
     return () => window.removeEventListener("keydown", onKey);
   }, [goTo]);
 
+  // Dismiss the QR popover on Escape or a click outside it.
+  useEffect(() => {
+    if (!qrOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setQrOpen(false);
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement)?.closest("[aria-label='Show site QR code'], [aria-label='Site QR code']")) {
+        setQrOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onClick);
+    };
+  }, [qrOpen]);
+
   // Konami code → leaf confetti + achievement toast.
   const unlock = useCallback(() => {
     setConfetti(true);
@@ -1299,15 +1319,61 @@ export function Portfolio() {
           height: "54px",
         }}
       >
-        <button
-          className="navlink"
-          style={{ ...navBtn("about"), justifySelf: "start" }}
-          onClick={() => goTo("about")}
-          aria-current={active === "about" ? "page" : undefined}
-          aria-keyshortcuts="a"
-        >
-          ← About
-        </button>
+        <div style={{ justifySelf: "start", display: "flex", alignItems: "center", gap: "16px", position: "relative" }}>
+          <button
+            className="navlink"
+            style={navBtn("about")}
+            onClick={() => goTo("about")}
+            aria-current={active === "about" ? "page" : undefined}
+            aria-keyshortcuts="a"
+          >
+            ← About
+          </button>
+          <button
+            onClick={() => setQrOpen((v) => !v)}
+            aria-label="Show site QR code"
+            aria-expanded={qrOpen}
+            style={{
+              color: qrOpen ? C.leaf : C.muted,
+              display: "flex",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              transition: "color var(--dur-base) var(--ease-out)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = qrOpen ? C.leaf : C.muted)}
+          >
+            <QrCode size={16} />
+          </button>
+          {qrOpen && (
+            <div
+              role="dialog"
+              aria-label="Site QR code"
+              style={{
+                position: "absolute",
+                top: "calc(100% + 10px)",
+                left: 0,
+                background: C.panel,
+                border: `1px solid ${C.border}`,
+                borderRadius: "12px",
+                padding: "14px",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/site-qr.png" alt="QR code linking to summerpandey.com" width={120} height={120} style={{ borderRadius: "6px" }} />
+              <span style={{ fontFamily: FONT, fontSize: "11px", color: C.muted, letterSpacing: "0.04em" }}>
+                summerpandey.com
+              </span>
+            </div>
+          )}
+        </div>
         <button
           onClick={() => goTo("welcome")}
           aria-label="Home"
