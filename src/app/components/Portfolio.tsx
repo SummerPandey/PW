@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
-import { C, FONT, SERIF, RESUME_PDF, type Panel } from "./theme";
+import { Linkedin, Github, Mail } from "lucide-react";
+import { C, FONT, SERIF, RESUME_PDF, LINKEDIN, GITHUB, MAILTO, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
 import { BootScreen, Confetti, Toast, Clock, Sprout, CodingDuck, useKonami, usePrefersReducedMotion } from "./fx";
@@ -1327,15 +1328,50 @@ export function Portfolio() {
           </span>
           <Clock />
         </button>
-        <button
-          className="navlink"
-          style={{ ...navBtn("works"), justifySelf: "end" }}
-          onClick={() => goTo("works")}
-          aria-current={active === "works" ? "page" : undefined}
-          aria-keyshortcuts="w"
-        >
-          Works →
-        </button>
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "18px" }}>
+          <button
+            className="navlink"
+            style={navBtn("works")}
+            onClick={() => goTo("works")}
+            aria-current={active === "works" ? "page" : undefined}
+            aria-keyshortcuts="w"
+          >
+            Works →
+          </button>
+          <span style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <a
+              href={LINKEDIN}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="LinkedIn"
+              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+            >
+              <Linkedin size={16} />
+            </a>
+            <a
+              href={GITHUB}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+            >
+              <Github size={16} />
+            </a>
+            <a
+              href={MAILTO}
+              aria-label="Email"
+              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+            >
+              <Mail size={16} />
+            </a>
+          </span>
+        </div>
       </nav>
 
       {/* ── the horizontal panel track ── */}
