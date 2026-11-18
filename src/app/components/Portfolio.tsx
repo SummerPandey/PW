@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
-import { Linkedin, Github, Mail, QrCode } from "lucide-react";
+import { Linkedin, Github, Mail, QrCode, MoreHorizontal } from "lucide-react";
 import { C, FONT, SERIF, RESUME_PDF, LINKEDIN, GITHUB, MAILTO, type Panel } from "./theme";
 import { AboutPage } from "./AboutPage";
 import { WorkPage } from "./WorkPage";
@@ -1113,6 +1113,7 @@ export function Portfolio() {
   const openDuckChat = useCallback(() => setDuckChatOpen(true), []);
   const closeDuckChat = useCallback(() => setDuckChatOpen(false), []);
   const [qrOpen, setQrOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   /* Panel changes are silent to assistive tech otherwise: announce each
      one (but not the initial panel) through a polite live region. */
@@ -1223,15 +1224,22 @@ export function Portfolio() {
     return () => window.removeEventListener("keydown", onKey);
   }, [goTo]);
 
-  // Dismiss the QR popover on Escape or a click outside it.
+  // Dismiss the QR / Connect popovers on Escape or a click outside them.
   useEffect(() => {
-    if (!qrOpen) return;
+    if (!qrOpen && !connectOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setQrOpen(false);
+      if (e.key === "Escape") {
+        setQrOpen(false);
+        setConnectOpen(false);
+      }
     };
     const onClick = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement)?.closest("[aria-label='Show site QR code'], [aria-label='Site QR code']")) {
+      const target = e.target as HTMLElement;
+      if (qrOpen && !target?.closest("[aria-label='Show site QR code'], [aria-label='Site QR code']")) {
         setQrOpen(false);
+      }
+      if (connectOpen && !target?.closest("[aria-label='Show contact links'], [aria-label='Contact links']")) {
+        setConnectOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -1240,7 +1248,7 @@ export function Portfolio() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("mousedown", onClick);
     };
-  }, [qrOpen]);
+  }, [qrOpen, connectOpen]);
 
   // Konami code → leaf confetti + achievement toast.
   const unlock = useCallback(() => {
@@ -1394,7 +1402,7 @@ export function Portfolio() {
           </span>
           <Clock />
         </button>
-        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "18px" }}>
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: "16px", position: "relative" }}>
           <button
             className="navlink"
             style={navBtn("works")}
@@ -1404,39 +1412,80 @@ export function Portfolio() {
           >
             Works →
           </button>
-          <span style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <a
-              href={LINKEDIN}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="LinkedIn"
-              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+          <button
+            onClick={() => setConnectOpen((v) => !v)}
+            aria-label="Show contact links"
+            aria-expanded={connectOpen}
+            style={{
+              color: connectOpen ? C.leaf : C.muted,
+              display: "flex",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              transition: "color var(--dur-base) var(--ease-out)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = connectOpen ? C.leaf : C.muted)}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+          {connectOpen && (
+            <div
+              role="dialog"
+              aria-label="Contact links"
+              style={{
+                position: "absolute",
+                top: "calc(100% + 10px)",
+                right: 0,
+                background: C.panel,
+                border: `1px solid ${C.border}`,
+                borderRadius: "12px",
+                padding: "10px",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "2px",
+                minWidth: "150px",
+              }}
             >
-              <Linkedin size={16} />
-            </a>
-            <a
-              href={GITHUB}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="GitHub"
-              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
-            >
-              <Github size={16} />
-            </a>
-            <a
-              href={MAILTO}
-              aria-label="Email"
-              style={{ color: C.muted, display: "flex", transition: "color var(--dur-base) var(--ease-out)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.leaf)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
-            >
-              <Mail size={16} />
-            </a>
-          </span>
+              {[
+                { Icon: Linkedin, label: "LinkedIn", href: LINKEDIN, external: true },
+                { Icon: Github, label: "GitHub", href: GITHUB, external: true },
+                { Icon: Mail, label: "Email", href: MAILTO, external: false },
+              ].map(({ Icon, label, href, external }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={external ? "_blank" : undefined}
+                  rel={external ? "noreferrer" : undefined}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    color: C.cream,
+                    fontFamily: FONT,
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    transition: "background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = C.elevated;
+                    e.currentTarget.style.color = C.leaf;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = C.cream;
+                  }}
+                >
+                  <Icon size={16} />
+                  {label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 
